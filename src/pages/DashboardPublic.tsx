@@ -10,6 +10,7 @@ import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 
