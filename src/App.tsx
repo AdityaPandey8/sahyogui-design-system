@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/hooks/use-theme";
 import Index from "./pages/Index";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import DashboardNGO from "./pages/DashboardNGO";
@@ -14,20 +15,22 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard/admin" element={<DashboardAdmin />} />
-          <Route path="/dashboard/ngo" element={<DashboardNGO />} />
-          <Route path="/dashboard/volunteer" element={<DashboardVolunteer />} />
-          <Route path="/dashboard/public" element={<DashboardPublic />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard/admin" element={<DashboardAdmin />} />
+            <Route path="/dashboard/ngo" element={<DashboardNGO />} />
+            <Route path="/dashboard/volunteer" element={<DashboardVolunteer />} />
+            <Route path="/dashboard/public" element={<DashboardPublic />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

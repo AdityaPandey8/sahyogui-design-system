@@ -77,9 +77,12 @@ export default function Index() {
           <span className="text-lg font-bold tracking-tight text-foreground">
             Sahyog<span className="text-primary">AI</span>
           </span>
-          <Button size="sm" onClick={() => setModalOpen(true)}>
-            Get Started
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button size="sm" onClick={() => setModalOpen(true)}>
+              Get Started
+            </Button>
+          </div>
         </div>
       </nav>
 
