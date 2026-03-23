@@ -3,16 +3,20 @@ import { ngos } from "@/data/mockData";
 import { NGOCard } from "@/components/NGOCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function DashboardNGO() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
-          <Link to="/">
-            <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
-          <h1 className="text-base font-bold">NGO Dashboard</h1>
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <Link to="/">
+              <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
+            </Link>
+            <h1 className="text-base font-bold">NGO Dashboard</h1>
+          </div>
+          <ThemeToggle />
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">

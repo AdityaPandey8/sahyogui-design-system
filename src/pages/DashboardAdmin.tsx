@@ -14,6 +14,7 @@ import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, BarChart3, Users, AlertTriangle, CheckCircle, Clock, Plus, Megaphone, ShieldAlert, Trophy, Brain, Send, Flag, Activity } from "lucide-react";
 import { toast } from "sonner";
 
