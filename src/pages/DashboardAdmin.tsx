@@ -14,6 +14,7 @@ import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, BarChart3, Users, AlertTriangle, CheckCircle, Clock, Plus, Megaphone, ShieldAlert, Trophy, Brain, Send, Flag, Activity } from "lucide-react";
 import { toast } from "sonner";
 
@@ -89,6 +90,7 @@ export default function DashboardAdmin() {
             <h1 className="text-base font-bold">Admin Dashboard</h1>
             {crisisMode && <span className="rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold text-danger-foreground animate-pulse">CRISIS MODE</span>}
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

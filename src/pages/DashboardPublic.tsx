@@ -10,6 +10,7 @@ import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,6 +94,7 @@ export default function DashboardPublic() {
             <h1 className="text-base font-bold">Public Dashboard</h1>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button size="sm" onClick={() => setReportOpen(true)} className="gap-1.5">
               <Plus className="h-3.5 w-3.5" /> Report Issue
             </Button>
