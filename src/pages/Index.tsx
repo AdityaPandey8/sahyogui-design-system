@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Brain,
   MapPin,
