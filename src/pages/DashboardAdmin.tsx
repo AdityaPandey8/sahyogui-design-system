@@ -90,6 +90,7 @@ export default function DashboardAdmin() {
             <h1 className="text-base font-bold">Admin Dashboard</h1>
             {crisisMode && <span className="rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold text-danger-foreground animate-pulse">CRISIS MODE</span>}
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
