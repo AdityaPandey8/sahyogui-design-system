@@ -1,145 +1,141 @@
 
 
-# SahyogAI — Public & Admin Dashboard Build Plan
+# SahyogAI — NGO & Volunteer Dashboard Build Plan
 
-This is a large feature set. Since there's no backend, everything will be simulated with mock data and React state. No real maps (no API keys) — we'll use styled placeholder heatmaps with colored dots.
-
----
-
-## Phase 1: Expand Mock Data
-
-**File: `src/data/mockData.ts`**
-
-Add new fields and types to support both dashboards:
-- `Issue`: add `description`, `category`, `images[]`, `reportedBy`, `assignedNgo`, `responseTime`, `createdAt`, `upvotes`, `comments[]`, `aiPriorityScore`, `affectedPeople`, `isAnonymous`, `isFake`
-- `NGO`: add `issuesHandled`, `successRate`, `avgResponseTime`
-- `Volunteer`: add `responseRate`, `reliabilityScore`, `tasksCompleted`
-- New types: `Alert`, `Comment`, `SafetyTip`
-- Add mock alerts (5), safety tips (5), helpline numbers
+Both dashboards currently show minimal placeholder content. They will be rebuilt as full-featured pages reusing existing components (MetricCard, FilterBar, HeatmapPlaceholder, IssueReportForm, IssueDetailDialog, AIPriorityCard, QuickActionBar, AlertCard) plus a few new ones.
 
 ---
 
-## Phase 2: Public Dashboard (`DashboardPublic.tsx`)
-
-Complete rebuild with tabbed/sectioned layout:
+## NGO Dashboard (`DashboardNGO.tsx`) — Full Rewrite
 
 ### Top Bar
-- Search input with filter dropdowns (location, category, urgency, status)
-- Emergency button (red, pulsing) — opens quick-report dialog with auto-location
+- Quick Action buttons: Add Issue, Claim Issue, Assign Volunteers, Activate Crisis Mode
+- ThemeToggle + back button (already present)
 
-### Stats Overview
-- 4 small metric cards: Issues in area, Resolved, Active emergencies, Your reports
+### Metrics Overview (5 cards)
+- Total Assigned, Active Issues, Completed, Avg Response Time, Active Volunteers
 
-### Issue Reporting Dialog
-- "Report Issue" CTA opens a form dialog with: title, description, category select, urgency select, location input, image upload placeholder, anonymous toggle
-- On submit: adds to local state, shows toast
+### Issue Management Panel
+- FilterBar (urgency, status, category)
+- Issue list as clickable cards — "Claim Issue" and "View Details" actions
+- IssueReportForm dialog for reporting new issues
+- IssueDetailDialog with additional NGO actions: assign volunteers, update status, upload proof (simulated)
 
-### Emergency Quick Report
-- One-tap button auto-fills location ("Detected: your area"), minimal input, instant toast confirmation
+### AI Insights Panel
+- Reuse AIPriorityCard showing top-priority issue with suggested action
 
-### Community Heatmap
-- Styled div with colored dots positioned by mock coordinates, color-coded by urgency
+### Volunteer Management
+- Filterable volunteer list (skill, availability)
+- Smart matching: highlight "best fit" volunteers for selected issue
+- "Auto Assign" button (simulated — assigns random available volunteers, shows toast)
 
-### Issue List
-- Filterable/searchable grid of IssueCards
-- Click opens Issue Detail dialog: full description, images placeholder, status, assigned NGO, progress timeline, feedback/rating form
+### Task Assignment
+- Simple dialog to assign a volunteer to an issue with deadline and task description
 
-### Live Alerts Panel
-- Scrollable alert banner/cards (disaster alerts, weather warnings)
+### Live Crisis Mode
+- HeatmapPlaceholder showing issue dots + volunteer position dots
+- Crisis mode toggle (changes header color, shows pulsing indicator)
 
-### Community Engagement
-- Upvote button on issues, comment input
-- State-managed counters
+### Progress Tracking
+- Status update buttons on each issue (Pending → Verified → In Progress → Solved)
 
-### Reporter Profile Section
-- Small card: issues reported count, contribution score, trust score
+### Collaboration Panel
+- "Request Help" button to simulate requesting assistance from other NGOs
+- List other NGOs with "Share Resources" action
 
-### Awareness Section
-- Accordion with safety tips, disaster guidelines, helpline numbers
+### Communication Panel
+- Simple broadcast message input to notify volunteers
+- Simulated message log
+
+### Analytics Section
+- Performance stats: issues solved, response time, volunteer efficiency, impact score
+
+### Notifications
+- Reuse AlertCard for issue alerts, volunteer responses, emergency updates
 
 ---
 
-## Phase 3: Admin Dashboard (`DashboardAdmin.tsx`)
-
-Complete rebuild with rich panels:
+## Volunteer Dashboard (`DashboardVolunteer.tsx`) — Full Rewrite
 
 ### Top Bar
-- Quick Action buttons: Add Issue, Assign NGO, Broadcast Alert, Activate Crisis Mode
-- Search + filters
+- Quick actions: Join Emergency, Toggle Availability
+- ThemeToggle + back
 
-### Global Overview (Top)
-- 5 metric cards with trend indicators: Total Issues, Active Crises, Resolved, Avg Response Time, Active Volunteers
+### Personal Overview (5 stat cards)
+- Tasks Assigned, Tasks Completed, Active Tasks, Reliability Score, Badges earned
 
-### Live Crisis Map
-- Same heatmap component as public but larger, with volunteer position dots
+### Nearby Issues
+- Issue list sorted by simulated "distance", filtered by urgency
+- Each card shows title, distance, urgency, required skills
+- "Accept Task" / "View Details" CTA
 
-### Priority Issue Queue
-- Table/list sorted by AI priority score, showing location, urgency, affected people, time
-- Action buttons: Assign NGO, Escalate, View Details
+### Smart Task Suggestions
+- Highlighted card: "You are best suited for this task" based on skill match
 
-### AI Decision Panel
-- Highlighted card for top issue showing: Priority Score (0-100), Predicted Response Time, Suggested Action text
+### One-Tap Emergency Join
+- Pulsing red button — instantly accepts nearest high-urgency issue, shows toast
 
-### Issue Verification Panel
-- List of "Pending" issues with Verify/Reject buttons, source indicator
+### Task Management Panel
+- Assigned/accepted tasks with status, deadline, actions (Accept/Reject/Complete)
 
-### NGO Performance
-- Cards/table: NGOs with issues handled, success rate, avg response time
-- Simple leaderboard ranking
+### Task Detail View
+- Reuse IssueDetailDialog with volunteer-specific context (instructions, NGO info)
 
-### Volunteer Performance
-- Cards/table: active volunteers, response rate, reliability score, top performers
+### Progress Tracking
+- Update task status: Started → In Progress → Completed
 
-### Fraud & Anomaly Detection
-- List of flagged/suspicious issues with reasons
+### Proof Upload
+- Simulated upload area on completed tasks
 
-### Alert & Notification Control
-- Broadcast alert form (text input + send button)
+### Availability Toggle
+- Available / Busy / Offline switch in header area
 
-### Resource Allocation Panel
-- Cards showing available volunteers, NGO capacity, resource gap warnings
+### Communication Panel
+- Simulated chat/message log with NGO
 
-### Historical Data
-- Simple stat cards showing past crises count, avg response trend
+### Performance Dashboard
+- Stats: tasks completed, response rate, reliability score, ranking among volunteers
 
-### Leaderboard
-- Top NGOs and volunteers by impact score
+### Skill Profile
+- View/edit skills list, add certifications (simulated)
 
----
+### History & Activity Log
+- List of past completed tasks
 
-## Phase 4: Shared Components
+### Rewards & Badges
+- Badge cards for milestones (10 tasks, 50 tasks, first emergency, etc.)
 
-New reusable components to create:
-- `HeatmapPlaceholder` — styled div with colored dots
-- `MetricCard` — icon, value, label, trend arrow
-- `IssueReportForm` — form inside Dialog
-- `IssueDetailDialog` — full issue view with timeline
-- `AlertCard` — alert/notification display
-- `FilterBar` — search + filter dropdowns
-- `QuickActionBar` — row of action buttons
-- `AIPriorityCard` — AI decision display
-- `FeedbackForm` — star rating + text
-- `SafetyTipsAccordion` — expandable tips
+### Notifications
+- AlertCards for new tasks, emergency alerts, messages
+
+### Search & Filter
+- FilterBar for tasks by urgency, location, category
 
 ---
 
-## File Summary
+## New Shared Components
+
+| Component | Purpose |
+|-----------|---------|
+| `TaskAssignDialog` | Dialog for NGO to assign volunteer to issue with deadline/description |
+| `VolunteerMatchCard` | Shows suggested volunteer with skill match % and distance |
+| `BadgeDisplay` | Renders achievement badges for volunteer dashboard |
+| `AvailabilityToggle` | 3-state toggle: Available/Busy/Offline |
+| `ActivityLog` | Simple timeline list of past actions |
+
+---
+
+## Files to Create/Edit
 
 | Action | File |
 |--------|------|
-| Edit | `src/data/mockData.ts` — expanded types and data |
-| Rewrite | `src/pages/DashboardPublic.tsx` — full public dashboard |
-| Rewrite | `src/pages/DashboardAdmin.tsx` — full admin dashboard |
-| Create | `src/components/dashboard/MetricCard.tsx` |
-| Create | `src/components/dashboard/HeatmapPlaceholder.tsx` |
-| Create | `src/components/dashboard/FilterBar.tsx` |
-| Create | `src/components/dashboard/AlertCard.tsx` |
-| Create | `src/components/dashboard/IssueReportForm.tsx` |
-| Create | `src/components/dashboard/IssueDetailDialog.tsx` |
-| Create | `src/components/dashboard/QuickActionBar.tsx` |
-| Create | `src/components/dashboard/AIPriorityCard.tsx` |
-| Create | `src/components/dashboard/FeedbackForm.tsx` |
-| Create | `src/components/dashboard/SafetyTipsAccordion.tsx` |
+| Rewrite | `src/pages/DashboardNGO.tsx` |
+| Rewrite | `src/pages/DashboardVolunteer.tsx` |
+| Create | `src/components/dashboard/TaskAssignDialog.tsx` |
+| Create | `src/components/dashboard/VolunteerMatchCard.tsx` |
+| Create | `src/components/dashboard/BadgeDisplay.tsx` |
+| Create | `src/components/dashboard/AvailabilityToggle.tsx` |
+| Create | `src/components/dashboard/ActivityLog.tsx` |
 
-All features are frontend-only with React state. No backend or external APIs required.
+All frontend-only with React state. Reuses existing mock data and components heavily.
 
