@@ -9,10 +9,17 @@ import { AlertCard } from "@/components/dashboard/AlertCard";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion";
+import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
+
+const publicNotifications: Notification[] = [
+  { id: "n1", title: "Flood Warning", message: "Heavy rainfall expected in Bihar. Stay safe.", type: "danger", time: "5m ago", read: false },
+  { id: "n2", title: "Relief Camp Open", message: "New camp at Patna — capacity 500 families.", type: "info", time: "30m ago", read: false },
+  { id: "n3", title: "Issue Resolved", message: "Road debris near Mussoorie cleared successfully.", type: "success", time: "1h ago", read: true },
+];
 
 export default function DashboardPublic() {
   const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
@@ -21,7 +28,6 @@ export default function DashboardPublic() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [reportOpen, setReportOpen] = useState(false);
-  const [emergencyOpen, setEmergencyOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   const filtered = useMemo(() => {
@@ -51,22 +57,11 @@ export default function DashboardPublic() {
       id: `EMG-${Date.now().toString(36).toUpperCase()}`,
       title: "Emergency reported at your location",
       description: "One-tap emergency report. Auto-detected location.",
-      urgency: "High",
-      status: "Pending",
-      location: "Auto-detected: Your Area",
-      category: "Disaster",
-      images: [],
-      reportedBy: "You",
-      assignedNgo: null,
-      responseTime: null,
-      createdAt: new Date().toISOString(),
-      upvotes: 0,
-      comments: [],
-      aiPriorityScore: 90,
-      affectedPeople: 100,
-      isAnonymous: false,
-      isFake: false,
-      coords: { x: 45, y: 50 },
+      urgency: "High", status: "Pending", location: "Auto-detected: Your Area",
+      category: "Disaster", images: [], reportedBy: "You", assignedNgo: null,
+      responseTime: null, createdAt: new Date().toISOString(), upvotes: 0,
+      comments: [], aiPriorityScore: 90, affectedPeople: 100,
+      isAnonymous: false, isFake: false, coords: { x: 45, y: 50 },
     };
     setIssueList((prev) => [issue, ...prev]);
     toast.success("🚨 Emergency reported!", { description: "Help is on the way. Stay safe." });
@@ -86,51 +81,54 @@ export default function DashboardPublic() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+            <Link to="/"><Button variant="ghost" size="icon" className="transition-all hover:shadow-sm"><ArrowLeft className="h-4 w-4" /></Button></Link>
             <h1 className="text-base font-bold">Public Dashboard</h1>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell
+              notifications={publicNotifications}
+              autoToast={{ message: "🔴 Flood warning in your area", description: "Heavy rainfall expected in Bihar and Jharkhand", delay: 3000 }}
+            />
             <ThemeToggle />
-            <Button size="sm" onClick={() => setReportOpen(true)} className="gap-1.5">
+            <Button size="sm" onClick={() => setReportOpen(true)} className="gap-1.5 transition-all active:scale-95">
               <Plus className="h-3.5 w-3.5" /> Report Issue
             </Button>
-            <Button size="sm" variant="destructive" onClick={handleEmergency} className="gap-1.5 animate-pulse">
+            <Button size="sm" variant="destructive" onClick={handleEmergency} className="gap-1.5 animate-pulse hover:animate-none active:scale-95">
               <Siren className="h-3.5 w-3.5" /> Emergency
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricCard icon={AlertTriangle} label="Total Issues" value={stats.total} trend={{ direction: "up", value: "+3" }} />
-          <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+1" }} />
-          <MetricCard icon={Flame} label="Active Emergencies" value={stats.high} />
-          <MetricCard icon={User} label="Your Reports" value={1} />
+          <MetricCard icon={AlertTriangle} label="Total Issues" value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
+          <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+1" }} delay={80} />
+          <MetricCard icon={Flame} label="Active Emergencies" value={stats.high} delay={160} />
+          <MetricCard icon={User} label="Your Reports" value={1} delay={240} />
         </div>
 
         {/* Live Alerts */}
         <div>
-          <h2 className="mb-2 text-sm font-bold flex items-center gap-1.5"><Siren className="h-4 w-4 text-danger" /> Live Alerts</h2>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {alerts.map((a) => <div key={a.id} className="min-w-[260px] shrink-0"><AlertCard alert={a} /></div>)}
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Siren className="h-3.5 w-3.5 text-danger" /> Live Alerts</h2>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {alerts.map((a) => <div key={a.id} className="min-w-[280px] shrink-0"><AlertCard alert={a} /></div>)}
           </div>
         </div>
 
         {/* Heatmap */}
         <div>
-          <h2 className="mb-2 text-sm font-bold">Community Heatmap</h2>
-          <HeatmapPlaceholder issues={issueList} size="lg" />
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Community Heatmap</h2>
+          <HeatmapPlaceholder issues={issueList} size="lg" onIssueClick={setSelectedIssue} />
         </div>
 
         {/* Filter + Issues */}
         <div>
-          <h2 className="mb-3 text-sm font-bold">Community Issues ({filtered.length})</h2>
+          <h2 className="mb-3 text-base font-bold border-b border-border/50 pb-2">Community Issues ({filtered.length})</h2>
           <FilterBar
             search={search}
             onSearchChange={setSearch}
@@ -151,7 +149,7 @@ export default function DashboardPublic() {
         </div>
 
         {/* Reporter Profile */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
               <User className="h-5 w-5 text-primary" />
@@ -162,15 +160,15 @@ export default function DashboardPublic() {
             </div>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-md bg-muted/50 p-2">
+            <div className="rounded-lg bg-muted/50 p-2.5">
               <p className="text-lg font-bold tabular-nums">1</p>
               <p className="text-[10px] text-muted-foreground">Reports</p>
             </div>
-            <div className="rounded-md bg-muted/50 p-2">
+            <div className="rounded-lg bg-muted/50 p-2.5">
               <p className="text-lg font-bold tabular-nums">42</p>
               <p className="text-[10px] text-muted-foreground">Contribution</p>
             </div>
-            <div className="rounded-md bg-muted/50 p-2">
+            <div className="rounded-lg bg-muted/50 p-2.5">
               <div className="flex items-center justify-center gap-0.5">
                 <Shield className="h-3.5 w-3.5 text-success" />
                 <p className="text-lg font-bold tabular-nums">8.5</p>
@@ -180,11 +178,9 @@ export default function DashboardPublic() {
           </div>
         </div>
 
-        {/* Safety Tips */}
         <SafetyTipsAccordion />
       </main>
 
-      {/* Dialogs */}
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
       <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} onUpvote={handleUpvote} onComment={handleComment} />
     </div>

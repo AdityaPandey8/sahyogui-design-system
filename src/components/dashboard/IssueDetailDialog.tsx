@@ -1,10 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
-import { MapPin, Clock, Users, ThumbsUp, MessageSquare, Star } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { MapPin, Clock, Users, ThumbsUp, MessageSquare, Star, Brain, Zap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { ngos, type Issue } from "@/data/mockData";
 
 interface IssueDetailDialogProps {
@@ -13,14 +15,17 @@ interface IssueDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onUpvote?: (id: string) => void;
   onComment?: (id: string, text: string) => void;
+  showAIInsights?: boolean;
 }
 
-export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComment }: IssueDetailDialogProps) {
+export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComment, showAIInsights }: IssueDetailDialogProps) {
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
 
   if (!issue) return null;
   const ngo = ngos.find((n) => n.id === issue.assignedNgo);
+  const scoreColor = issue.aiPriorityScore >= 80 ? "text-danger" : issue.aiPriorityScore >= 50 ? "text-warning" : "text-success";
+  const progressColor = issue.aiPriorityScore >= 80 ? "[&>div]:bg-danger" : issue.aiPriorityScore >= 50 ? "[&>div]:bg-warning" : "[&>div]:bg-success";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,7 +38,7 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
         <div className="flex flex-wrap gap-2">
           <StatusBadge status={issue.status} />
           <UrgencyBadge urgency={issue.urgency} />
-          <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">{issue.category}</span>
+          <span className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">{issue.category}</span>
         </div>
 
         <p className="text-sm text-muted-foreground">{issue.description}</p>
@@ -46,10 +51,41 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
         </div>
 
         {ngo && (
-          <div className="rounded-md bg-primary/5 border border-primary/20 p-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
             <p className="text-xs font-medium text-primary">Assigned NGO</p>
             <p className="text-sm font-semibold">{ngo.name}</p>
             <p className="text-xs text-muted-foreground">{ngo.focusArea}</p>
+          </div>
+        )}
+
+        {/* AI Insights Panel (conditional) */}
+        {showAIInsights && (
+          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative">
+                <Brain className="h-4 w-4 text-primary" />
+                <Sparkles className="absolute -top-1 -right-1 h-2 w-2 text-primary animate-pulse" />
+              </div>
+              <span className="text-xs font-bold">AI Analysis</span>
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                <span className="h-1 w-1 rounded-full bg-primary animate-pulse" /> LIVE
+              </span>
+            </div>
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><Zap className="h-3 w-3" /> Priority Score</span>
+                <span className={cn("text-base font-bold tabular-nums", scoreColor)}>{issue.aiPriorityScore}</span>
+              </div>
+              <Progress value={issue.aiPriorityScore} className={cn("h-1.5", progressColor)} />
+            </div>
+            <div className="rounded-md bg-background/60 border border-border/50 p-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Suggested Action</p>
+              <p className="text-xs font-medium">
+                {issue.aiPriorityScore >= 80
+                  ? `Deploy ${Math.ceil(issue.affectedPeople / 300)} volunteers immediately`
+                  : `Assign ${Math.ceil(issue.affectedPeople / 500)} volunteers within 2 hours`}
+              </p>
+            </div>
           </div>
         )}
 
@@ -62,8 +98,8 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
             const active = i <= current;
             return (
               <div key={step} className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${active ? "bg-primary" : "bg-muted"}`} />
-                <span className={`text-xs ${active ? "text-foreground font-medium" : "text-muted-foreground"}`}>{step}</span>
+                <div className={cn("h-2.5 w-2.5 rounded-full transition-colors", active ? "bg-primary shadow-sm" : "bg-muted")} />
+                <span className={cn("text-xs transition-colors", active ? "text-foreground font-medium" : "text-muted-foreground")}>{step}</span>
               </div>
             );
           })}
@@ -71,7 +107,7 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
 
         {/* Engagement */}
         <div className="flex items-center gap-3 border-t pt-3">
-          <Button variant="outline" size="sm" onClick={() => onUpvote?.(issue.id)} className="gap-1">
+          <Button variant="outline" size="sm" onClick={() => onUpvote?.(issue.id)} className="gap-1 transition-all hover:shadow-sm active:scale-95">
             <ThumbsUp className="h-3 w-3" /> {issue.upvotes}
           </Button>
           <span className="flex items-center gap-1 text-xs text-muted-foreground"><MessageSquare className="h-3 w-3" />{issue.comments.length} comments</span>
@@ -81,7 +117,7 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
         {issue.comments.length > 0 && (
           <div className="space-y-2">
             {issue.comments.map((c) => (
-              <div key={c.id} className="rounded-md bg-muted/50 p-2">
+              <div key={c.id} className="rounded-lg bg-muted/50 p-2.5">
                 <p className="text-xs font-medium">{c.author}</p>
                 <p className="text-xs text-muted-foreground">{c.text}</p>
               </div>
@@ -100,8 +136,8 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
             <p className="text-xs font-medium mb-1">Rate Response</p>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((s) => (
-                <button key={s} onClick={() => setRating(s)} className="transition-transform hover:scale-110 active:scale-95">
-                  <Star className={`h-5 w-5 ${s <= rating ? "fill-warning text-warning" : "text-muted-foreground"}`} />
+                <button key={s} onClick={() => setRating(s)} className="transition-transform hover:scale-125 active:scale-95">
+                  <Star className={cn("h-5 w-5", s <= rating ? "fill-warning text-warning" : "text-muted-foreground")} />
                 </button>
               ))}
             </div>
