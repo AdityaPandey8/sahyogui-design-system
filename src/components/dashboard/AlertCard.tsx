@@ -18,7 +18,10 @@ const severityStyle: Record<string, string> = {
 export function AlertCard({ alert }: { alert: Alert }) {
   const Icon = iconMap[alert.type];
   return (
-    <div className={cn("flex items-start gap-3 rounded-lg border p-3", severityStyle[alert.severity])}>
+    <div className={cn(
+      "flex items-start gap-3 rounded-xl border p-3.5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+      severityStyle[alert.severity]
+    )}>
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
         <p className="text-sm font-semibold leading-tight">{alert.title}</p>
