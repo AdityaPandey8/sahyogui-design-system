@@ -1,141 +1,109 @@
 
 
-# SahyogAI — NGO & Volunteer Dashboard Build Plan
+# SahyogAI — Enhanced Map, AI Insights, Notifications & UI Polish
 
-Both dashboards currently show minimal placeholder content. They will be rebuilt as full-featured pages reusing existing components (MetricCard, FilterBar, HeatmapPlaceholder, IssueReportForm, IssueDetailDialog, AIPriorityCard, QuickActionBar, AlertCard) plus a few new ones.
+## Overview
 
----
-
-## NGO Dashboard (`DashboardNGO.tsx`) — Full Rewrite
-
-### Top Bar
-- Quick Action buttons: Add Issue, Claim Issue, Assign Volunteers, Activate Crisis Mode
-- ThemeToggle + back button (already present)
-
-### Metrics Overview (5 cards)
-- Total Assigned, Active Issues, Completed, Avg Response Time, Active Volunteers
-
-### Issue Management Panel
-- FilterBar (urgency, status, category)
-- Issue list as clickable cards — "Claim Issue" and "View Details" actions
-- IssueReportForm dialog for reporting new issues
-- IssueDetailDialog with additional NGO actions: assign volunteers, update status, upload proof (simulated)
-
-### AI Insights Panel
-- Reuse AIPriorityCard showing top-priority issue with suggested action
-
-### Volunteer Management
-- Filterable volunteer list (skill, availability)
-- Smart matching: highlight "best fit" volunteers for selected issue
-- "Auto Assign" button (simulated — assigns random available volunteers, shows toast)
-
-### Task Assignment
-- Simple dialog to assign a volunteer to an issue with deadline and task description
-
-### Live Crisis Mode
-- HeatmapPlaceholder showing issue dots + volunteer position dots
-- Crisis mode toggle (changes header color, shows pulsing indicator)
-
-### Progress Tracking
-- Status update buttons on each issue (Pending → Verified → In Progress → Solved)
-
-### Collaboration Panel
-- "Request Help" button to simulate requesting assistance from other NGOs
-- List other NGOs with "Share Resources" action
-
-### Communication Panel
-- Simple broadcast message input to notify volunteers
-- Simulated message log
-
-### Analytics Section
-- Performance stats: issues solved, response time, volunteer efficiency, impact score
-
-### Notifications
-- Reuse AlertCard for issue alerts, volunteer responses, emergency updates
+The app already has a `HeatmapPlaceholder` component, `AIPriorityCard`, toast notifications via Sonner, and a solid design system. The request covers four areas — most of which are already partially implemented. This plan focuses on upgrading what exists and filling gaps.
 
 ---
 
-## Volunteer Dashboard (`DashboardVolunteer.tsx`) — Full Rewrite
+## 1. Enhanced Map Component
 
-### Top Bar
-- Quick actions: Join Emergency, Toggle Availability
-- ThemeToggle + back
+**Current state:** `HeatmapPlaceholder` is a plain div with grid lines and colored dots. It works but looks flat.
 
-### Personal Overview (5 stat cards)
-- Tasks Assigned, Tasks Completed, Active Tasks, Reliability Score, Badges earned
+**Upgrade approach** (no API key needed — keep simulated):
 
-### Nearby Issues
-- Issue list sorted by simulated "distance", filtered by urgency
-- Each card shows title, distance, urgency, required skills
-- "Accept Task" / "View Details" CTA
+- **Replace the plain grid background** with a styled SVG-based map aesthetic: curved "road" lines, region outlines, subtle topographic texture using CSS gradients and SVG paths
+- **Improve markers**: Add pulsing animation on High urgency dots, tooltip on hover showing issue title, size dots proportionally to `affectedPeople`
+- **Add interactive click** on markers to open `IssueDetailDialog`
+- **Volunteer Dashboard**: Add a dashed SVG line from volunteer position to nearest issue (simulated route/navigation)
+- **Admin Dashboard**: Already has volunteers on map — add a count badge overlay ("12 issues, 7 volunteers")
 
-### Smart Task Suggestions
-- Highlighted card: "You are best suited for this task" based on skill match
-
-### One-Tap Emergency Join
-- Pulsing red button — instantly accepts nearest high-urgency issue, shows toast
-
-### Task Management Panel
-- Assigned/accepted tasks with status, deadline, actions (Accept/Reject/Complete)
-
-### Task Detail View
-- Reuse IssueDetailDialog with volunteer-specific context (instructions, NGO info)
-
-### Progress Tracking
-- Update task status: Started → In Progress → Completed
-
-### Proof Upload
-- Simulated upload area on completed tasks
-
-### Availability Toggle
-- Available / Busy / Offline switch in header area
-
-### Communication Panel
-- Simulated chat/message log with NGO
-
-### Performance Dashboard
-- Stats: tasks completed, response rate, reliability score, ranking among volunteers
-
-### Skill Profile
-- View/edit skills list, add certifications (simulated)
-
-### History & Activity Log
-- List of past completed tasks
-
-### Rewards & Badges
-- Badge cards for milestones (10 tasks, 50 tasks, first emergency, etc.)
-
-### Notifications
-- AlertCards for new tasks, emergency alerts, messages
-
-### Search & Filter
-- FilterBar for tasks by urgency, location, category
+**Files:** Edit `src/components/dashboard/HeatmapPlaceholder.tsx`
 
 ---
 
-## New Shared Components
+## 2. AI Insights Panels
 
-| Component | Purpose |
-|-----------|---------|
-| `TaskAssignDialog` | Dialog for NGO to assign volunteer to issue with deadline/description |
-| `VolunteerMatchCard` | Shows suggested volunteer with skill match % and distance |
-| `BadgeDisplay` | Renders achievement badges for volunteer dashboard |
-| `AvailabilityToggle` | 3-state toggle: Available/Busy/Offline |
-| `ActivityLog` | Simple timeline list of past actions |
+**Current state:** `AIPriorityCard` exists and is used on Admin and NGO dashboards. Volunteer dashboard has a "best match" recommendation.
+
+**Enhancements:**
+
+- **NGO Dashboard — Issue Detail View**: Add AI insights inline inside `IssueDetailDialog` when opened from NGO dashboard (pass a prop `showAIInsights`). Show priority score bar, response prediction, and suggested action text
+- **Admin Dashboard**: Already has `AIPriorityCard` — enhance with a color-coded progress bar for priority score and a blinking "AI" indicator
+- **Volunteer Dashboard**: Enhance the existing "AI RECOMMENDED" card with a match percentage score and reasoning text ("Your First Aid skill matches this Health emergency")
+
+**Files:** Edit `AIPriorityCard.tsx`, `IssueDetailDialog.tsx`, `DashboardVolunteer.tsx`
 
 ---
 
-## Files to Create/Edit
+## 3. Notification System
+
+**Current state:** Sonner toasts are already used throughout for button actions. No auto-triggered notifications.
+
+**Enhancements:**
+
+- **Auto-trigger notifications on mount**: Each dashboard shows 1-2 simulated notifications after a delay (e.g., 3s after page load)
+  - Volunteer: "New task assigned to you" 
+  - NGO: "New issue reported in your area"
+  - Admin: "Issue pending verification"
+  - Public: "Flood warning in your area"
+- **Notification bell icon in header** with unread count badge — clicking shows a dropdown panel of recent notifications
+- **Use existing Sonner** for the auto-dismiss toasts, plus a persistent notification panel component
+
+**Files:** Create `src/components/dashboard/NotificationBell.tsx`, edit all 4 dashboard headers
+
+---
+
+## 4. UI/UX Polish
+
+**Enhancements across all pages:**
+
+### Animations
+- Add `transition-all duration-200` and `hover:shadow-md hover:-translate-y-0.5` to all card components (IssueCard, MetricCard, NGOCard, VolunteerCard, AlertCard)
+- Add `active:scale-[0.98]` to all buttons
+- Add smooth `transition-colors` to theme toggle
+- Stagger fade-in animations on dashboard metric cards using `animation-delay`
+
+### Spacing & Layout
+- Increase section spacing from `space-y-6` to `space-y-8` on dashboards
+- Add consistent `p-5` (up from `p-3/p-4`) on issue cards in management panels
+- Ensure header heights are consistent (h-16 with good vertical centering)
+
+### Typography
+- Section headings: upgrade from `text-sm font-bold` to `text-base font-bold` with a subtle bottom border or accent line
+- Add `text-xs uppercase tracking-wider text-muted-foreground` for section labels
+
+### Card Components
+- Add `hover:shadow-lg` transition to all cards
+- Ensure all cards use `rounded-xl` (up from `rounded-lg`) for a more modern feel
+- Add subtle gradient overlays on metric cards
+- Add ring highlight on the "Crisis Mode" active state
+
+### Color Consistency
+- Verify urgency colors are consistent: danger for High, warning for Medium, success for Low (already done — just audit)
+- Add colored left-border accent on issue cards matching urgency
+
+**Files:** Edit `MetricCard.tsx`, `IssueCard.tsx`, `AlertCard.tsx`, `HeatmapPlaceholder.tsx`, all 4 dashboards, `Index.tsx`, `tailwind.config.ts` (add any missing keyframes)
+
+---
+
+## File Summary
 
 | Action | File |
 |--------|------|
-| Rewrite | `src/pages/DashboardNGO.tsx` |
-| Rewrite | `src/pages/DashboardVolunteer.tsx` |
-| Create | `src/components/dashboard/TaskAssignDialog.tsx` |
-| Create | `src/components/dashboard/VolunteerMatchCard.tsx` |
-| Create | `src/components/dashboard/BadgeDisplay.tsx` |
-| Create | `src/components/dashboard/AvailabilityToggle.tsx` |
-| Create | `src/components/dashboard/ActivityLog.tsx` |
-
-All frontend-only with React state. Reuses existing mock data and components heavily.
+| Edit | `src/components/dashboard/HeatmapPlaceholder.tsx` — enhanced visuals, click, route line |
+| Edit | `src/components/dashboard/AIPriorityCard.tsx` — progress bar, blinking indicator |
+| Edit | `src/components/dashboard/IssueDetailDialog.tsx` — optional AI insights section |
+| Edit | `src/components/dashboard/MetricCard.tsx` — hover effects, stagger animation |
+| Edit | `src/components/dashboard/AlertCard.tsx` — hover transitions |
+| Edit | `src/components/IssueCard.tsx` — urgency border accent, hover effects |
+| Create | `src/components/dashboard/NotificationBell.tsx` — bell icon with dropdown |
+| Edit | `src/pages/DashboardPublic.tsx` — notifications, spacing, typography |
+| Edit | `src/pages/DashboardAdmin.tsx` — notifications, spacing, typography |
+| Edit | `src/pages/DashboardNGO.tsx` — notifications, spacing, typography |
+| Edit | `src/pages/DashboardVolunteer.tsx` — enhanced AI card, notifications, spacing |
+| Edit | `src/pages/Index.tsx` — minor hover/animation polish |
+| Edit | `tailwind.config.ts` — pulse-dot keyframe if needed |
 
