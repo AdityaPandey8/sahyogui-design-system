@@ -48,6 +48,8 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
       isAnonymous: anonymous,
       isFake: false,
       coords: { x: Math.random() * 70 + 15, y: Math.random() * 70 + 15 },
+      assignedVolunteers: [],
+      photos: [],
     };
     onSubmit(newIssue);
     setTitle(""); setDescription(""); setLocation(""); setUrgency("Medium"); setCategory("Disaster"); setAnonymous(false);

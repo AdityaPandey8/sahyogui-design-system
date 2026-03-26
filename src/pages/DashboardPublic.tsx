@@ -62,6 +62,7 @@ export default function DashboardPublic() {
       responseTime: null, createdAt: new Date().toISOString(), upvotes: 0,
       comments: [], aiPriorityScore: 90, affectedPeople: 100,
       isAnonymous: false, isFake: false, coords: { x: 45, y: 50 },
+      assignedVolunteers: [], photos: [],
     };
     setIssueList((prev) => [issue, ...prev]);
     toast.success("🚨 Emergency reported!", { description: "Help is on the way. Stay safe." });
