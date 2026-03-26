@@ -2,12 +2,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Clock, Users, ThumbsUp, MessageSquare, Star, Brain, Zap, Sparkles } from "lucide-react";
+import { MapPin, Clock, Users, ThumbsUp, MessageSquare, Star, Brain, Zap, Sparkles, Image, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ngos, type Issue } from "@/data/mockData";
+import { ngos, volunteers, type Issue } from "@/data/mockData";
 
 interface IssueDetailDialogProps {
   issue: Issue | null;
@@ -15,15 +15,18 @@ interface IssueDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onUpvote?: (id: string) => void;
   onComment?: (id: string, text: string) => void;
+  onDelete?: (id: string) => void;
   showAIInsights?: boolean;
+  showDelete?: boolean;
 }
 
-export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComment, showAIInsights }: IssueDetailDialogProps) {
+export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComment, onDelete, showAIInsights, showDelete }: IssueDetailDialogProps) {
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
 
   if (!issue) return null;
   const ngo = ngos.find((n) => n.id === issue.assignedNgo);
+  const assignedVols = volunteers.filter(v => issue.assignedVolunteers.includes(v.id));
   const scoreColor = issue.aiPriorityScore >= 80 ? "text-danger" : issue.aiPriorityScore >= 50 ? "text-warning" : "text-success";
   const progressColor = issue.aiPriorityScore >= 80 ? "[&>div]:bg-danger" : issue.aiPriorityScore >= 50 ? "[&>div]:bg-warning" : "[&>div]:bg-success";
 
@@ -50,6 +53,20 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
           <span className="flex items-center gap-1">Reported by: {issue.reportedBy}</span>
         </div>
 
+        {/* Photos/Videos */}
+        {issue.photos.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Image className="h-3 w-3" /> Photos/Videos ({issue.photos.length})</p>
+            <div className="grid grid-cols-3 gap-2">
+              {issue.photos.map((photo, idx) => (
+                <div key={idx} className="aspect-video rounded-lg bg-muted border overflow-hidden">
+                  <img src={photo} alt={`Issue photo ${idx + 1}`} className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {ngo && (
           <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
             <p className="text-xs font-medium text-primary">Assigned NGO</p>
@@ -58,7 +75,20 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
           </div>
         )}
 
-        {/* AI Insights Panel (conditional) */}
+        {/* Assigned Volunteers */}
+        {assignedVols.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Assigned Volunteers ({assignedVols.length})</p>
+            {assignedVols.map(v => (
+              <div key={v.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                <p className="text-xs font-medium">{v.name}</p>
+                <p className="text-[10px] text-muted-foreground">{v.skills.join(", ")}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* AI Insights Panel */}
         {showAIInsights && (
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -111,6 +141,11 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
             <ThumbsUp className="h-3 w-3" /> {issue.upvotes}
           </Button>
           <span className="flex items-center gap-1 text-xs text-muted-foreground"><MessageSquare className="h-3 w-3" />{issue.comments.length} comments</span>
+          {showDelete && onDelete && (
+            <Button variant="destructive" size="sm" className="gap-1 ml-auto" onClick={() => onDelete(issue.id)}>
+              <Trash2 className="h-3 w-3" /> Delete
+            </Button>
+          )}
         </div>
 
         {/* Comments */}
