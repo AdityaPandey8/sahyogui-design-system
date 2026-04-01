@@ -105,24 +105,15 @@ export default function Index() {
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden py-24 sm:py-32">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="mx-auto max-w-2xl px-4 text-center">
-          <h1 className="animate-fade-in text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl" style={{ lineHeight: "1.1" }}>
-            Connecting Communities with NGOs and Volunteers using AI
-          </h1>
-          <p className="mx-auto mt-5 max-w-lg animate-fade-in text-base text-muted-foreground [animation-delay:100ms] opacity-0">
-            SahyogAI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination.
-          </p>
-          <Button
-            size="lg"
-            className="mt-8 animate-fade-in [animation-delay:200ms] opacity-0"
-            onClick={() => setModalOpen(true)}
-          >
-            Get Started <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
-        </div>
-      </section>
+      <ImageCarouselHero
+        title="Connecting Communities with NGOs and Volunteers using AI"
+        subtitle="SahyogAI Platform"
+        description="SahyogAI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
+        ctaText="Get Started"
+        onCtaClick={() => setModalOpen(true)}
+        images={heroImages}
+        features={heroFeatures}
+      />
 
       {/* About */}
       <section className="border-t py-20">
