@@ -51,6 +51,23 @@ const features = [
   { icon: BarChart3, title: "Impact Analytics", desc: "Measure outcomes and resource allocation with actionable dashboards." },
 ];
 
+const heroImages = [
+  { id: "1", src: "https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&q=60&w=900", alt: "Community volunteers", rotation: -15 },
+  { id: "2", src: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&q=60&w=900", alt: "Disaster relief", rotation: -8 },
+  { id: "3", src: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=60&w=900", alt: "Helping hands", rotation: 5 },
+  { id: "4", src: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=60&w=900", alt: "NGO fieldwork", rotation: 12 },
+  { id: "5", src: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&q=60&w=900", alt: "Community building", rotation: -12 },
+  { id: "6", src: "https://images.unsplash.com/photo-1559024094-4a1e4495c3c1?auto=format&fit=crop&q=60&w=900", alt: "Relief coordination", rotation: 8 },
+  { id: "7", src: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=60&w=900", alt: "Volunteer teamwork", rotation: -5 },
+  { id: "8", src: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=60&w=900", alt: "Community meeting", rotation: 10 },
+];
+
+const heroFeatures = [
+  { title: "AI-Powered Matching", description: "Smart algorithms connect the right responders to critical issues." },
+  { title: "Real-Time Coordination", description: "Live tracking of deployments and issue resolution." },
+  { title: "Community Driven", description: "Empowering citizens, NGOs, and volunteers together." },
+];
+
 const steps = [
   { icon: Search, label: "Report", desc: "Citizens report community issues with location and details." },
   { icon: CheckCircle2, label: "Verify", desc: "Admins verify and prioritize incoming reports." },
