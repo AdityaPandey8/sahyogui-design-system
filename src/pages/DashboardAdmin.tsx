@@ -415,7 +415,7 @@ export default function DashboardAdmin() {
       panelLabel="Admin Panel"
       sidebarItems={sidebarItems}
       activeSection={section}
-      onSectionChange={setSection}
+      onSectionChange={(s) => setSection(s as AdminSection)}
       sidebarOpen={sidebarOpen}
       onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
       notifications={adminNotifications}
