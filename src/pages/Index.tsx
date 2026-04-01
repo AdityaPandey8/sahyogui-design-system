@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ImageCarouselHero } from "@/components/ui/image-carousel-hero";
 import {
   Brain,
   MapPin,
