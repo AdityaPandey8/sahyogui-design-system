@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { issues as initialIssues, ngos, volunteers as initialVolunteers, alerts, type Issue, type NGO, type Volunteer, type Alert as AlertType } from "@/data/mockData";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
 import { FilterBar } from "@/components/dashboard/FilterBar";
@@ -15,17 +15,16 @@ import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { VolunteerMatchCard } from "@/components/dashboard/VolunteerMatchCard";
 import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
-import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
+import type { Notification } from "@/components/dashboard/NotificationBell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeft, BarChart3, Users, AlertTriangle, CheckCircle, Clock,
-  Plus, ShieldAlert, Brain, Send, Megaphone, HandHelping, Activity as ActivityIcon,
+  BarChart3, Users, AlertTriangle, CheckCircle, Clock,
+  Plus, ShieldAlert, Brain, Send, Megaphone, HandHelping,
   Trophy, UserCheck, Handshake, LayoutDashboard, FileText, Building2,
   Bell, Eye, ShieldCheck, ShieldOff, X
 } from "lucide-react";
