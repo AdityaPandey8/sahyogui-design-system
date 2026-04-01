@@ -20,7 +20,7 @@ interface DashboardShellProps<T extends string> {
   sidebarOpen: boolean;
   onSidebarToggle: () => void;
   notifications?: Notification[];
-  autoToast?: { message: string; description?: string; delay?: number };
+  autoToast?: { message: string; description: string; delay?: number };
   crisisMode?: boolean;
   headerExtra?: ReactNode;
   children: ReactNode;
