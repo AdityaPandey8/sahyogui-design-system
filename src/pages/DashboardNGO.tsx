@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { issues as initialIssues, ngos, volunteers as initialVolunteers, alerts, type Issue, type NGO, type Volunteer, type Alert as AlertType } from "@/data/mockData";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
 import { FilterBar } from "@/components/dashboard/FilterBar";
@@ -15,17 +15,16 @@ import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { VolunteerMatchCard } from "@/components/dashboard/VolunteerMatchCard";
 import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
-import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
+import type { Notification } from "@/components/dashboard/NotificationBell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeft, BarChart3, Users, AlertTriangle, CheckCircle, Clock,
-  Plus, ShieldAlert, Brain, Send, Megaphone, HandHelping, Activity as ActivityIcon,
+  BarChart3, Users, AlertTriangle, CheckCircle, Clock,
+  Plus, ShieldAlert, Brain, Send, Megaphone, HandHelping,
   Trophy, UserCheck, Handshake, LayoutDashboard, FileText, Building2,
   Bell, Eye, ShieldCheck, ShieldOff, X
 } from "lucide-react";
@@ -354,63 +353,25 @@ export default function DashboardNGO() {
   };
 
   return (
-    <div className={cn("min-h-screen bg-background flex", crisisMode && "ring-2 ring-danger ring-inset")}>
-      {/* Sidebar */}
-      <aside className={cn(
-        "sticky top-0 h-screen border-r bg-card transition-all duration-300 flex flex-col shrink-0",
-        sidebarOpen ? "w-52" : "w-14"
-      )}>
-        <div className="flex items-center gap-2 border-b px-3 h-16 shrink-0">
-          {sidebarOpen && <span className="text-sm font-bold truncate">{currentNgo.name}</span>}
-          <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <LayoutDashboard className="h-4 w-4" />
-          </Button>
-        </div>
-        <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
-          {sidebarItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setSection(item.id)}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
-                section === item.id ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {sidebarOpen && <span className="truncate">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-      </aside>
+    <DashboardShell
+      panelLabel={currentNgo.name}
+      sidebarItems={sidebarItems}
+      activeSection={section}
+      onSectionChange={(s) => setSection(s as NgoSection)}
+      sidebarOpen={sidebarOpen}
+      onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+      notifications={ngoNotifications}
+      autoToast={{ message: "📋 New issue reported in your area", description: "Flooded road near Sector 14 needs immediate attention", delay: 3500 }}
+      crisisMode={crisisMode}
+    >
+      {renderContent()}
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-          <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-            <div className="flex items-center gap-3">
-              <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-              <h1 className="text-base font-bold">{sidebarItems.find(s => s.id === section)?.label}</h1>
-              {crisisMode && <span className="rounded-full bg-danger px-2.5 py-0.5 text-[10px] font-bold text-danger-foreground animate-pulse">CRISIS MODE</span>}
-            </div>
-            <div className="flex items-center gap-2">
-              <NotificationBell notifications={ngoNotifications} autoToast={{ message: "📋 New issue reported in your area", description: "Flooded road near Sector 14 needs immediate attention", delay: 3500 }} />
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-4 lg:p-6 max-w-6xl">
-          {renderContent()}
-        </main>
-      </div>
-
-      {/* Dialogs */}
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
       <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} showAIInsights />
       <TaskAssignDialog issue={assignIssue} open={!!assignIssue} onOpenChange={(open) => !open && setAssignIssue(null)} />
       <VolunteerDetailDialog volunteer={selectedVol} open={!!selectedVol} onOpenChange={(open) => !open && setSelectedVol(null)} onBlock={handleBlockVol} />
       <NGODetailDialog ngo={selectedNgo} open={!!selectedNgo} onOpenChange={(open) => !open && setSelectedNgo(null)} showManageActions={false} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
-    </div>
+    </DashboardShell>
   );
 }
