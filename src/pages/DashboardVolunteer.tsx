@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { issues as initialIssues, ngos, volunteers, alerts, type Issue, type Alert } from "@/data/mockData";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
@@ -12,20 +11,17 @@ import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
 import { BadgeDisplay } from "@/components/dashboard/BadgeDisplay";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
-import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
+import { type Notification } from "@/components/dashboard/NotificationBell";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  SidebarProvider, SidebarTrigger, Sidebar, SidebarContent,
-  SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
-  SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
-} from "@/components/ui/sidebar";
-import {
-  ArrowLeft, CheckCircle, Clock, MapPin, Zap, Trophy,
+  CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
   LayoutDashboard, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
   Send, X, Building2, Eye, ChevronDown, ChevronRight
@@ -45,14 +41,14 @@ const ALL_SKILLS = ["First Aid", "Medical", "Logistics", "Driving", "Constructio
 
 type Section = "overview" | "tasks" | "issues" | "map" | "messages" | "profile" | "alerts";
 
-const sidebarItems: { title: string; id: Section; icon: typeof LayoutDashboard }[] = [
-  { title: "Overview", id: "overview", icon: LayoutDashboard },
-  { title: "My Tasks", id: "tasks", icon: ListTodo },
-  { title: "Nearby Issues", id: "issues", icon: MapPin },
-  { title: "Map & Navigation", id: "map", icon: Map },
-  { title: "Messages", id: "messages", icon: MessageSquare },
-  { title: "Profile", id: "profile", icon: UserCircle },
-  { title: "Alerts", id: "alerts", icon: Bell },
+const shellSidebarItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
+  { label: "Overview", id: "overview", icon: LayoutDashboard },
+  { label: "My Tasks", id: "tasks", icon: ListTodo },
+  { label: "Nearby Issues", id: "issues", icon: MapPin },
+  { label: "Map & Navigation", id: "map", icon: Map },
+  { label: "Messages", id: "messages", icon: MessageSquare },
+  { label: "Profile", id: "profile", icon: UserCircle },
+  { label: "Alerts", id: "alerts", icon: Bell },
 ];
 
 interface Message {
@@ -64,37 +60,8 @@ interface Message {
   fromVolunteer: boolean;
 }
 
-function VolunteerSidebar({ active, onNavigate }: { active: Section; onNavigate: (s: Section) => void }) {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Volunteer Panel</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onNavigate(item.id)}
-                    className={cn("cursor-pointer", active === item.id && "bg-primary/10 text-primary font-medium")}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>{item.title}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  );
-}
-
 export default function DashboardVolunteer() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("overview");
   const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
   const [search, setSearch] = useState("");
@@ -520,61 +487,37 @@ export default function DashboardVolunteer() {
             </div>
           </div>
         );
-
-      case "alerts":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-base font-bold">Active Alerts</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {alerts.map(a => (
-                <div key={a.id} className="cursor-pointer" onClick={() => setSelectedAlert(a)}>
-                  <AlertCard alert={a} />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
   };
 
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <VolunteerSidebar active={section} onNavigate={setSection} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-            <div className="flex h-14 items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="mr-1" />
-                <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-                <div>
-                  <h1 className="text-sm font-bold">{currentVol.name}</h1>
-                  <AvailabilityToggle status={availability} onChange={setAvailability} />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <NotificationBell notifications={volNotifications} autoToast={{ message: "📋 New task assigned", description: "Food shortage relief near your area", delay: 3000 }} />
-                <Button variant="destructive" size="sm" className="gap-1.5 animate-pulse hover:animate-none active:scale-95" onClick={handleEmergencyJoin}>
-                  <Zap className="h-3.5 w-3.5" /> Join Emergency
-                </Button>
-                <ThemeToggle />
-              </div>
-            </div>
-          </header>
 
-          <main className="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
-            {renderContent()}
-          </main>
-        </div>
-      </div>
+  return (
+    <>
+      <DashboardShell
+        panelLabel="Volunteer Panel"
+        sidebarItems={shellSidebarItems}
+        activeSection={section}
+        onSectionChange={(s) => setSection(s as Section)}
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={() => setSidebarOpen(p => !p)}
+        notifications={volNotifications}
+        autoToast={{ message: "📋 New task assigned", description: "Food shortage relief near your area", delay: 3000 }}
+        headerExtra={
+          <Button variant="destructive" size="sm" className="gap-1.5 animate-pulse hover:animate-none active:scale-95" onClick={handleEmergencyJoin}>
+            <Zap className="h-3.5 w-3.5" /> Join Emergency
+          </Button>
+        }
+      >
+        {renderContent()}
+      </DashboardShell>
 
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
       <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
       <NGODetailDialog ngo={selectedNgo} open={!!selectedNgo} onOpenChange={(open) => !open && setSelectedNgoId(null)} />
-    </SidebarProvider>
+      <AIChatWidget />
+    </>
   );
 }

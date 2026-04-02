@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { issues as initialIssues, alerts, type Issue, type Alert } from "@/data/mockData";
 import { IssueCard } from "@/components/IssueCard";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -10,19 +9,16 @@ import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion";
-import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
+import { type Notification } from "@/components/dashboard/NotificationBell";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  SidebarProvider, SidebarTrigger, Sidebar, SidebarContent,
-  SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
-  SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
-} from "@/components/ui/sidebar";
-import {
-  ArrowLeft, Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp,
+  Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp,
   LayoutDashboard, FileText, Bell, Map, UserCircle, Trash2, Award, Star, TrendingUp,
-  Heart, Target, Zap, Clock
+  Heart, Target, Clock
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -35,43 +31,13 @@ const publicNotifications: Notification[] = [
 
 type Section = "home" | "issues" | "alerts" | "map" | "profile";
 
-const sidebarItems: { title: string; id: Section; icon: typeof LayoutDashboard }[] = [
-  { title: "Home", id: "home", icon: LayoutDashboard },
-  { title: "Issues", id: "issues", icon: FileText },
-  { title: "Alerts", id: "alerts", icon: Bell },
-  { title: "Map", id: "map", icon: Map },
-  { title: "Profile", id: "profile", icon: UserCircle },
+const shellSidebarItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
+  { label: "Home", id: "home", icon: LayoutDashboard },
+  { label: "Issues", id: "issues", icon: FileText },
+  { label: "Alerts", id: "alerts", icon: Bell },
+  { label: "Map", id: "map", icon: Map },
+  { label: "Profile", id: "profile", icon: UserCircle },
 ];
-
-function PublicSidebar({ active, onNavigate }: { active: Section; onNavigate: (s: Section) => void }) {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Public Dashboard</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onNavigate(item.id)}
-                    className={cn("cursor-pointer", active === item.id && "bg-primary/10 text-primary font-medium")}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>{item.title}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  );
-}
 
 // Profile achievement badges
 const profileBadges = [
@@ -84,6 +50,7 @@ const profileBadges = [
 ];
 
 export default function DashboardPublic() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("home");
   const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
   const [search, setSearch] = useState("");
@@ -390,36 +357,24 @@ export default function DashboardPublic() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <PublicSidebar active={section} onNavigate={setSection} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-            <div className="flex h-14 items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="mr-1" />
-                <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-                <h1 className="text-sm font-bold">Public Dashboard</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <NotificationBell
-                  notifications={publicNotifications}
-                  autoToast={{ message: "🔴 Flood warning in your area", description: "Heavy rainfall expected in Bihar and Jharkhand", delay: 3000 }}
-                />
-                <ThemeToggle />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
-            {renderContent()}
-          </main>
-        </div>
-      </div>
+    <>
+      <DashboardShell
+        panelLabel="Public Dashboard"
+        sidebarItems={shellSidebarItems}
+        activeSection={section}
+        onSectionChange={(s) => setSection(s as Section)}
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={() => setSidebarOpen(p => !p)}
+        notifications={publicNotifications}
+        autoToast={{ message: "🔴 Flood warning in your area", description: "Heavy rainfall expected in Bihar and Jharkhand", delay: 3000 }}
+      >
+        {renderContent()}
+      </DashboardShell>
 
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
       <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} onUpvote={handleUpvote} onComment={handleComment} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
-    </SidebarProvider>
+      <AIChatWidget />
+    </>
   );
 }
