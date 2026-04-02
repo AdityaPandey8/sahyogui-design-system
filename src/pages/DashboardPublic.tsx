@@ -31,43 +31,13 @@ const publicNotifications: Notification[] = [
 
 type Section = "home" | "issues" | "alerts" | "map" | "profile";
 
-const sidebarItems: { title: string; id: Section; icon: typeof LayoutDashboard }[] = [
-  { title: "Home", id: "home", icon: LayoutDashboard },
-  { title: "Issues", id: "issues", icon: FileText },
-  { title: "Alerts", id: "alerts", icon: Bell },
-  { title: "Map", id: "map", icon: Map },
-  { title: "Profile", id: "profile", icon: UserCircle },
+const shellSidebarItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
+  { label: "Home", id: "home", icon: LayoutDashboard },
+  { label: "Issues", id: "issues", icon: FileText },
+  { label: "Alerts", id: "alerts", icon: Bell },
+  { label: "Map", id: "map", icon: Map },
+  { label: "Profile", id: "profile", icon: UserCircle },
 ];
-
-function PublicSidebar({ active, onNavigate }: { active: Section; onNavigate: (s: Section) => void }) {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Public Dashboard</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onNavigate(item.id)}
-                    className={cn("cursor-pointer", active === item.id && "bg-primary/10 text-primary font-medium")}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>{item.title}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  );
-}
 
 // Profile achievement badges
 const profileBadges = [
