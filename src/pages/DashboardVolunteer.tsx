@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { issues as initialIssues, ngos, volunteers, alerts, type Issue, type Alert } from "@/data/mockData";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
@@ -12,20 +11,17 @@ import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
 import { BadgeDisplay } from "@/components/dashboard/BadgeDisplay";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
-import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
+import { type Notification } from "@/components/dashboard/NotificationBell";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  SidebarProvider, SidebarTrigger, Sidebar, SidebarContent,
-  SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
-  SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
-} from "@/components/ui/sidebar";
-import {
-  ArrowLeft, CheckCircle, Clock, MapPin, Zap, Trophy,
+  CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
   LayoutDashboard, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
   Send, X, Building2, Eye, ChevronDown, ChevronRight
