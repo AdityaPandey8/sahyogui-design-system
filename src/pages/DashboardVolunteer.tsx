@@ -499,7 +499,7 @@ export default function DashboardVolunteer() {
         panelLabel="Volunteer Panel"
         sidebarItems={shellSidebarItems}
         activeSection={section}
-        onSectionChange={setSection}
+        onSectionChange={(s) => setSection(s as Section)}
         sidebarOpen={sidebarOpen}
         onSidebarToggle={() => setSidebarOpen(p => !p)}
         notifications={volNotifications}
