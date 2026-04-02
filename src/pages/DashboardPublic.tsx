@@ -49,7 +49,7 @@ const profileBadges = [
   { id: "pb6", name: "Watchdog", desc: "20+ reports filed", icon: Target, earned: false, color: "text-warning" },
 ];
 
-export default function DashboardPublic() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("home");
   const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
   const [search, setSearch] = useState("");
