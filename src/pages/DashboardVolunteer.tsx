@@ -61,6 +61,7 @@ interface Message {
 }
 
 export default function DashboardVolunteer() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("overview");
   const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
   const [search, setSearch] = useState("");
