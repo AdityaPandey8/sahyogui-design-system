@@ -356,36 +356,24 @@ const profileBadges = [
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <PublicSidebar active={section} onNavigate={setSection} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-            <div className="flex h-14 items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="mr-1" />
-                <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-                <h1 className="text-sm font-bold">Public Dashboard</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <NotificationBell
-                  notifications={publicNotifications}
-                  autoToast={{ message: "🔴 Flood warning in your area", description: "Heavy rainfall expected in Bihar and Jharkhand", delay: 3000 }}
-                />
-                <ThemeToggle />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
-            {renderContent()}
-          </main>
-        </div>
-      </div>
+    <>
+      <DashboardShell
+        panelLabel="Public Dashboard"
+        sidebarItems={shellSidebarItems}
+        activeSection={section}
+        onSectionChange={(s) => setSection(s as Section)}
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={() => setSidebarOpen(p => !p)}
+        notifications={publicNotifications}
+        autoToast={{ message: "🔴 Flood warning in your area", description: "Heavy rainfall expected in Bihar and Jharkhand", delay: 3000 }}
+      >
+        {renderContent()}
+      </DashboardShell>
 
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
       <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} onUpvote={handleUpvote} onComment={handleComment} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
-    </SidebarProvider>
+      <AIChatWidget />
+    </>
   );
 }
