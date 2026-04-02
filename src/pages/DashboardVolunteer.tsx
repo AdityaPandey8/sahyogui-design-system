@@ -487,8 +487,11 @@ export default function DashboardVolunteer() {
             </div>
           </div>
         );
+      default:
+        return null;
+    }
+  };
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <>
