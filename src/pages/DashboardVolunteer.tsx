@@ -487,60 +487,33 @@ export default function DashboardVolunteer() {
           </div>
         );
 
-      case "alerts":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-base font-bold">Active Alerts</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {alerts.map(a => (
-                <div key={a.id} className="cursor-pointer" onClick={() => setSelectedAlert(a)}>
-                  <AlertCard alert={a} />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <VolunteerSidebar active={section} onNavigate={setSection} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
-            <div className="flex h-14 items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="mr-1" />
-                <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-                <div>
-                  <h1 className="text-sm font-bold">{currentVol.name}</h1>
-                  <AvailabilityToggle status={availability} onChange={setAvailability} />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <NotificationBell notifications={volNotifications} autoToast={{ message: "📋 New task assigned", description: "Food shortage relief near your area", delay: 3000 }} />
-                <Button variant="destructive" size="sm" className="gap-1.5 animate-pulse hover:animate-none active:scale-95" onClick={handleEmergencyJoin}>
-                  <Zap className="h-3.5 w-3.5" /> Join Emergency
-                </Button>
-                <ThemeToggle />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
-            {renderContent()}
-          </main>
-        </div>
-      </div>
+    <>
+      <DashboardShell
+        panelLabel="Volunteer Panel"
+        sidebarItems={shellSidebarItems}
+        activeSection={section}
+        onSectionChange={setSection}
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={() => setSidebarOpen(p => !p)}
+        notifications={volNotifications}
+        autoToast={{ message: "📋 New task assigned", description: "Food shortage relief near your area", delay: 3000 }}
+        headerExtra={
+          <Button variant="destructive" size="sm" className="gap-1.5 animate-pulse hover:animate-none active:scale-95" onClick={handleEmergencyJoin}>
+            <Zap className="h-3.5 w-3.5" /> Join Emergency
+          </Button>
+        }
+      >
+        {renderContent()}
+      </DashboardShell>
 
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
       <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
       <NGODetailDialog ngo={selectedNgo} open={!!selectedNgo} onOpenChange={(open) => !open && setSelectedNgoId(null)} />
-    </SidebarProvider>
+      <AIChatWidget />
+    </>
   );
 }
