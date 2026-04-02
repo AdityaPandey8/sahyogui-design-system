@@ -135,7 +135,7 @@ const HeroSection = ({ title, subtitle, actions, stats, images, className }: Her
             </motion.div>
             <motion.div
               variants={imageVariants}
-              animate={{ ...floatingVariants.animate }}
+              animate={floatingAnimation}
               className="absolute right-0 top-0 h-48 w-64 overflow-hidden rounded-2xl shadow-xl ring-1 ring-border"
             >
               <img src={images[1]} alt="" className="h-full w-full object-cover" loading="lazy" />
