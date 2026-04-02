@@ -47,18 +47,16 @@ const imageVariants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: 'easeOut' },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
-const floatingVariants = {
-  animate: {
-    y: [0, -8, 0],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: 'easeInOut',
-    },
+const floatingAnimation = {
+  y: [0, -8, 0],
+  transition: {
+    duration: 3,
+    repeat: Infinity,
+    ease: "easeInOut" as const,
   },
 };
 
