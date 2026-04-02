@@ -41,14 +41,14 @@ const ALL_SKILLS = ["First Aid", "Medical", "Logistics", "Driving", "Constructio
 
 type Section = "overview" | "tasks" | "issues" | "map" | "messages" | "profile" | "alerts";
 
-const sidebarItems: { title: string; id: Section; icon: typeof LayoutDashboard }[] = [
-  { title: "Overview", id: "overview", icon: LayoutDashboard },
-  { title: "My Tasks", id: "tasks", icon: ListTodo },
-  { title: "Nearby Issues", id: "issues", icon: MapPin },
-  { title: "Map & Navigation", id: "map", icon: Map },
-  { title: "Messages", id: "messages", icon: MessageSquare },
-  { title: "Profile", id: "profile", icon: UserCircle },
-  { title: "Alerts", id: "alerts", icon: Bell },
+const shellSidebarItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
+  { label: "Overview", id: "overview", icon: LayoutDashboard },
+  { label: "My Tasks", id: "tasks", icon: ListTodo },
+  { label: "Nearby Issues", id: "issues", icon: MapPin },
+  { label: "Map & Navigation", id: "map", icon: Map },
+  { label: "Messages", id: "messages", icon: MessageSquare },
+  { label: "Profile", id: "profile", icon: UserCircle },
+  { label: "Alerts", id: "alerts", icon: Bell },
 ];
 
 interface Message {
@@ -58,36 +58,6 @@ interface Message {
   text: string;
   time: string;
   fromVolunteer: boolean;
-}
-
-function VolunteerSidebar({ active, onNavigate }: { active: Section; onNavigate: (s: Section) => void }) {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Volunteer Panel</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onNavigate(item.id)}
-                    className={cn("cursor-pointer", active === item.id && "bg-primary/10 text-primary font-medium")}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>{item.title}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  );
 }
 
 export default function DashboardVolunteer() {
