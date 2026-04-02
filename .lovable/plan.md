@@ -1,91 +1,101 @@
 
 
-# SahyogAI — Multi-Page Volunteer & Public Dashboards + Enhanced Features
+# SahyogAI — Hero Redesign, Dashboard Refactor, Skeletons & AI Integration
 
-## Architecture
+## 1. Hero Section Redesign
 
-Both dashboards will be converted from single-page scrolling layouts to sidebar-based multi-section layouts (same pattern used in Admin and NGO dashboards — React state switching between sections).
+Replace the current `ImageCarouselHero` with a new `HeroSection` component using **framer-motion** for polished animations.
 
----
+**New file:** `src/components/ui/hero-section.tsx`
+- Adapted from the provided `hero-section-9.tsx` (no Next.js dependencies)
+- Two-column layout: left text content with staggered animations, right image collage with floating/parallax effects
+- Stats bar with icons (lucide-react: `Users`, `Building2`, `Heart`)
+- Two CTA buttons: "Get Started" (primary) + "Learn More" (outline, scrolls to features)
 
-## Volunteer Dashboard — 7 Sections
+**Edit:** `src/pages/Index.tsx`
+- Replace `ImageCarouselHero` import with new `HeroSection`
+- Pass SahyogAI-themed props: community volunteer images from Unsplash, stats (15K+ volunteers, 200+ NGOs, 50K+ issues resolved)
 
-**Sidebar nav:** Overview | Tasks | Nearby Issues | Map | Messages | Profile | Alerts
-
-### 1. Overview
-Current metrics, AI recommendation card, badges display — moved from existing top section.
-
-### 2. Tasks (My Tasks)
-- Assigned/accepted tasks with status, accept/reject/complete actions
-- **Delete report** button on self-reported issues (with confirmation)
-- Proof upload placeholder
-- Full task detail via `IssueDetailDialog`
-
-### 3. Nearby Issues
-- FilterBar with **Location**, **Urgency**, **Category** filters (currently only urgency)
-- Issue cards with accept/view actions
-- Report Issue button
-
-### 4. Map & Navigation
-- `HeatmapPlaceholder` with route to nearest issue (already exists, just isolated to its own section)
-
-### 5. Messages
-- Full message view from connected NGOs (currently truncated inline)
-- **Reply** input for each message (simulated — adds to local state)
-- Show NGO name, message text, timestamp
-- Link to view connected NGO details via `NGODetailDialog`
-
-### 6. Profile
-- **Editable skill profile**: add/remove skills from a predefined list
-- Performance stats (tasks done, response rate, reliability, ranking)
-- Availability toggle
-- Badges & rewards (`BadgeDisplay`)
-- **Activity history** — full detail view of past activities (expand each entry to show description, date, associated issue)
-- **Connected NGO details** — show NGO info (name, focus area, contact, issues handled) for NGOs the volunteer is linked to
-
-### 7. Alerts
-- Full alert cards with `AlertDetailDialog` on click (reports, photos/videos)
-- Notification list
+**Install:** `framer-motion`
 
 ---
 
-## Public Dashboard — 5 Sections
+## 2. DashboardShell Refactor for Volunteer & Public Dashboards
 
-**Sidebar nav:** Home | Issues | Alerts | Map | Profile
+Both dashboards currently use the `SidebarProvider`/`Sidebar` pattern from shadcn. Refactor to use the shared `DashboardShell` component (already used by Admin and NGO dashboards).
 
-### 1. Home (Overview)
-- Metric cards, live alerts horizontal scroll, safety tips accordion
+**Edit:** `src/pages/DashboardVolunteer.tsx`
+- Remove `VolunteerSidebar` component and `SidebarProvider` wrapper
+- Convert `sidebarItems` to `DashboardShell` format (`{ id, label, icon }`)
+- Wrap content in `<DashboardShell>` with notifications, panel label
 
-### 2. Issues
-- FilterBar with **Location**, **Urgency**, **Category** filters (already has urgency/status/category — add location)
-- Issue cards with full detail on click
-- Report Issue + Emergency buttons
-- **Delete own reports** button (issues where `reportedBy === "You"`)
-
-### 3. Alerts
-- Full alert list with `AlertDetailDialog` showing complete details, photos/videos
-
-### 4. Map
-- Community heatmap (already exists, isolated to own section)
-
-### 5. Profile (Enhanced)
-- **Redesigned profile section** with:
-  - Avatar with initials, name, "Active Reporter" badge
-  - Stats grid: Issues Reported, Issues Resolved (by community), Upvotes Received, Trust Score, Community Rank, Contribution Points
-  - Progress bar for trust score (0-10)
-  - "Your Reports" list — issues reported by the user with status tracking
-  - Emergency reports count
-  - Achievement badges (e.g., "First Report", "10 Upvotes", "Emergency Reporter")
-  - Member since date
+**Edit:** `src/pages/DashboardPublic.tsx`
+- Same refactor: remove `PublicSidebar`, use `DashboardShell`
 
 ---
 
-## Files to Create/Edit
+## 3. Loading Skeletons & Empty States
 
-| Action | File |
-|--------|------|
-| Rewrite | `src/pages/DashboardVolunteer.tsx` — sidebar nav, 7 sections |
-| Rewrite | `src/pages/DashboardPublic.tsx` — sidebar nav, 5 sections |
+**New file:** `src/components/dashboard/DashboardSkeleton.tsx`
+- Reusable skeleton components: `MetricCardSkeleton`, `IssueCardSkeleton`, `TableRowSkeleton`, `SectionSkeleton`
+- Uses existing `Skeleton` component from `src/components/ui/skeleton.tsx`
 
-No new components needed — reuses existing `AlertDetailDialog`, `NGODetailDialog`, `IssueDetailDialog`, `FilterBar`, `BadgeDisplay`, `AvailabilityToggle`, `ActivityLog`, `HeatmapPlaceholder`, `NotificationBell`.
+**New file:** `src/components/dashboard/EmptyState.tsx`
+- Generic empty state with icon, title, description, optional action button
+- Used when filtered lists return zero results or sections have no data
+
+**Edit:** All 4 dashboard pages — wrap section content with skeleton fallbacks and empty states for filtered lists.
+
+---
+
+## 4. Gemini AI Integration via Lovable AI Gateway
+
+The project already has `LOVABLE_API_KEY` configured, which provides access to Google Gemini models through the Lovable AI Gateway. No separate Google API key is needed.
+
+**New file:** `supabase/functions/chat/index.ts`
+- Edge function calling Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`)
+- Model: `google/gemini-3-flash-preview`
+- Streaming SSE support
+- Handles 429/402 errors
+
+**New file:** `supabase/functions/analyze-issue/index.ts`
+- Non-streaming edge function for issue analysis
+- Takes issue title/description/category, returns priority score, suggested category, recommended responder type
+- Uses tool-calling for structured JSON output
+
+**New file:** `src/components/dashboard/AIChatWidget.tsx`
+- Floating chat button (bottom-right corner) available on all dashboards
+- Expandable chat panel with streaming message display
+- Uses `react-markdown` (already installed) for AI response rendering
+
+**New file:** `src/lib/ai.ts`
+- `streamChat()` helper for SSE streaming from the chat edge function
+- `analyzeIssue()` helper for structured issue analysis
+
+**Edit:** `supabase/config.toml` — add function entries with `verify_jwt = false`
+
+**Edit:** Dashboard pages — integrate AI chat widget and issue analysis into report forms
+
+---
+
+## 5. Landing Page UI Polish
+
+**Edit:** `src/components/landing/FeaturesSection.tsx` — add scroll-reveal animations
+**Edit:** `src/components/landing/Navbar.tsx` — add nav links (Features, How It Works, Map) with smooth scroll
+**Edit:** `src/pages/Index.tsx` — add section IDs for anchor navigation, enhance footer with social links
+
+---
+
+## Technical Details
+
+| Area | Details |
+|------|---------|
+| New dependency | `framer-motion` |
+| Edge functions | `chat`, `analyze-issue` — auto-deployed |
+| AI model | `google/gemini-3-flash-preview` via Lovable AI Gateway |
+| Auth for AI | `LOVABLE_API_KEY` (already configured) |
+| Skeleton pattern | Reuses `@/components/ui/skeleton` with dashboard-specific compositions |
+
+**Files to create:** 6 new files
+**Files to edit:** 7 existing files
 
