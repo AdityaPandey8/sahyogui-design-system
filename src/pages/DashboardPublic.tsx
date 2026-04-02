@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { issues as initialIssues, alerts, type Issue, type Alert } from "@/data/mockData";
 import { IssueCard } from "@/components/IssueCard";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -10,19 +9,16 @@ import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion";
-import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
+import { type Notification } from "@/components/dashboard/NotificationBell";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  SidebarProvider, SidebarTrigger, Sidebar, SidebarContent,
-  SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
-  SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
-} from "@/components/ui/sidebar";
-import {
-  ArrowLeft, Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp,
+  Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp,
   LayoutDashboard, FileText, Bell, Map, UserCircle, Trash2, Award, Star, TrendingUp,
-  Heart, Target, Zap, Clock
+  Heart, Target, Clock
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
