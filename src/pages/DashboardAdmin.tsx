@@ -433,6 +433,7 @@ export default function DashboardAdmin() {
       <CrisisDetailDialog crisis={selectedCrisis} open={!!selectedCrisis} onOpenChange={(open) => !open && setSelectedCrisis(null)} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
       <TaskAssignDialog issue={assignIssue} open={!!assignIssue} onOpenChange={(open) => !open && setAssignIssue(null)} />
+      <AIChatWidget />
     </DashboardShell>
   );
 }
