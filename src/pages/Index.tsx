@@ -9,6 +9,7 @@ import { RoadmapSection } from "@/components/landing/RoadmapSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { UseCasesSection } from "@/components/landing/UseCasesSection";
 import { PartnersSection } from "@/components/landing/PartnersSection";
+import { Footer } from "@/components/landing/Footer";
 import { RoleSelectionDialog } from "@/components/landing/RoleSelectionDialog";
 import { LiveActivityTicker } from "@/components/landing/LiveActivityTicker";
 import { Users, Building2, Heart } from "lucide-react";
@@ -101,14 +102,7 @@ export default function Index() {
         <MapPreviewSection />
       </div>
 
-      {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="mx-auto max-w-5xl px-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            © 2026 SahyogAI. Built to connect communities.
-          </p>
-        </div>
-      </footer>
+      <Footer />
 
       <RoleSelectionDialog open={modalOpen} onOpenChange={setModalOpen} />
     </div>
