@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { issues as initialIssues, ngos, volunteers as initialVolunteers, alerts, type Issue, type NGO, type Volunteer, type Alert as AlertType } from "@/data/mockData";
+import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
