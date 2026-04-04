@@ -1,5 +1,6 @@
 import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface MetricCardProps {
   icon: LucideIcon;
@@ -12,29 +13,40 @@ interface MetricCardProps {
 
 export function MetricCard({ icon: Icon, label, value, trend, className, delay = 0 }: MetricCardProps) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: delay / 1000 }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
       className={cn(
-        "rounded-xl border bg-card p-4 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+        "group relative overflow-hidden rounded-2xl border bg-card/50 p-5 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:shadow-primary/5",
         className
       )}
-      style={delay ? { animationDelay: `${delay}ms` } : undefined}
     >
-      <div className="flex items-center justify-between">
-        <div className="rounded-lg bg-primary/10 p-2">
-          <Icon className="h-4 w-4 text-primary" />
+      <div className="flex items-start justify-between">
+        <div className="rounded-xl bg-primary/10 p-2.5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-sm">
+          <Icon className="h-5 w-5" />
         </div>
         {trend && (
-          <span className={cn(
-            "inline-flex items-center gap-0.5 text-xs font-medium",
-            trend.direction === "up" ? "text-success" : "text-danger"
+          <div className={cn(
+            "flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold tracking-tight",
+            trend.direction === "up" ? "bg-success/10 text-success border border-success/20" : "bg-destructive/10 text-destructive border border-destructive/20"
           )}>
             {trend.direction === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {trend.value}
-          </span>
+          </div>
         )}
       </div>
-      <p className="mt-3 text-2xl font-bold tabular-nums text-card-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
+      
+      <div className="mt-4">
+        <p className="text-3xl font-bold tabular-nums tracking-tight text-foreground group-hover:text-primary transition-colors">{value}</p>
+        <p className="text-xs font-medium text-muted-foreground mt-1 group-hover:text-foreground/80 transition-colors uppercase tracking-wider">{label}</p>
+      </div>
+
+      {/* Decorative element */}
+      <div className="absolute -bottom-2 -right-2 h-16 w-16 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-colors" />
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    </motion.div>
   );
 }
+

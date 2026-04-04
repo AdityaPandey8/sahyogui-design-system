@@ -5,6 +5,7 @@ import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { MapPreviewSection } from "@/components/landing/MapPreviewSection";
 import { RoleSelectionDialog } from "@/components/landing/RoleSelectionDialog";
+import { LiveActivityTicker } from "@/components/landing/LiveActivityTicker";
 import { Users, Building2, Heart } from "lucide-react";
 
 function useScrollReveal() {
@@ -36,6 +37,10 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar onGetStarted={() => setModalOpen(true)} />
+      
+      <div className="pt-16 md:pt-20">
+        <LiveActivityTicker />
+      </div>
 
       <HeroSection
         title={
@@ -44,6 +49,7 @@ export default function Index() {
             <span className="text-primary">AI</span>
           </>
         }
+
         subtitle="SahyogAI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
         actions={[
           { text: "Get Started", onClick: () => setModalOpen(true), variant: "default" },
