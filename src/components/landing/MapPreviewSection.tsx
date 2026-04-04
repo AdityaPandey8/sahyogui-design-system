@@ -316,7 +316,7 @@ export function MapPreviewSection() {
           {/* Map */}
           <Card className="overflow-hidden">
             <CardContent className="p-0">
-              <div className="h-[400px] sm:h-[500px] lg:h-[600px] relative">
+              <div className="h-[300px] sm:h-[400px] lg:h-[600px] relative">
                 <MapContainer
                   center={center}
                   zoom={11}
@@ -334,20 +334,20 @@ export function MapPreviewSection() {
                 </MapContainer>
 
                 {/* Map Legend */}
-                <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border">
-                  <h4 className="text-sm font-semibold mb-2">Priority Levels</h4>
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-background/90 backdrop-blur-sm rounded-lg p-2 sm:p-3 shadow-lg border max-w-[140px] sm:max-w-none">
+                  <h4 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Priority</h4>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-destructive"></div>
-                      <span className="text-xs">High Priority</span>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-destructive"></div>
+                      <span className="text-xs">High</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-warning"></div>
-                      <span className="text-xs">Medium Priority</span>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-warning"></div>
+                      <span className="text-xs">Medium</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-success"></div>
-                      <span className="text-xs">Low Priority</span>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-success"></div>
+                      <span className="text-xs">Low</span>
                     </div>
                   </div>
                 </div>

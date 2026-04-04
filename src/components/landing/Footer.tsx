@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Link } from "react-router-dom";
 import {
   Heart,
   Mail,
@@ -36,10 +37,10 @@ const footerLinks = {
     { label: "Contact Us", href: "#" },
   ],
   legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Cookie Policy", href: "#" },
-    { label: "Data Protection", href: "#" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms of Service", href: "/terms-of-service" },
+    { label: "Cookie Policy", href: "/cookie-policy" },
+    { label: "Data Protection", href: "/data-protection" },
   ],
 };
 
@@ -243,12 +244,12 @@ export function Footer() {
             <span>© 2026 SahyogAI. All rights reserved.</span>
             {footerLinks.legal.map((link, index) => (
               <span key={link.label}>
-                <a
-                  href={link.href}
+                <Link
+                  to={link.href}
                   className="hover:text-primary transition-colors"
                 >
                   {link.label}
-                </a>
+                </Link>
                 {index < footerLinks.legal.length - 1 && <span className="mx-2">•</span>}
               </span>
             ))}
