@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Brain, Loader2 } from "lucide-react";
+import { analyzeIssue } from "@/lib/ai";
+import { toast } from "sonner";
 import type { Urgency, Category, Issue } from "@/data/mockData";
 
 interface IssueReportFormProps {
@@ -25,6 +27,26 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
   const [urgency, setUrgency] = useState<Urgency>(prefill?.urgency || "Medium");
   const [category, setCategory] = useState<Category>("Disaster");
   const [anonymous, setAnonymous] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiResult, setAiResult] = useState<{ priority: number; suggestedCategory: string; responderType: string; summary: string } | null>(null);
+
+  const handleAnalyze = async () => {
+    if (!title.trim() || !description.trim()) {
+      toast.error("Please enter title and description first");
+      return;
+    }
+    setAnalyzing(true);
+    setAiResult(null);
+    try {
+      const result = await analyzeIssue({ title, description, category });
+      setAiResult(result);
+      toast.success("AI analysis complete");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Analysis failed");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -35,7 +57,7 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
       urgency,
       status: "Pending",
       location: location || "Auto-detected location",
-      category,
+      category: (aiResult?.suggestedCategory as Category) || category,
       images: [],
       reportedBy: anonymous ? "Anonymous" : "You",
       assignedNgo: null,
@@ -43,7 +65,7 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
       createdAt: new Date().toISOString(),
       upvotes: 0,
       comments: [],
-      aiPriorityScore: Math.floor(Math.random() * 40) + 50,
+      aiPriorityScore: aiResult?.priority ?? Math.floor(Math.random() * 40) + 50,
       affectedPeople: Math.floor(Math.random() * 500) + 10,
       isAnonymous: anonymous,
       isFake: false,
@@ -52,7 +74,7 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
       photos: [],
     };
     onSubmit(newIssue);
-    setTitle(""); setDescription(""); setLocation(""); setUrgency("Medium"); setCategory("Disaster"); setAnonymous(false);
+    setTitle(""); setDescription(""); setLocation(""); setUrgency("Medium"); setCategory("Disaster"); setAnonymous(false); setAiResult(null);
     onOpenChange(false);
   };
 
@@ -83,6 +105,43 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
               </SelectContent>
             </Select>
           </div>
+
+          {/* AI Analysis Button */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleAnalyze}
+            disabled={analyzing || !title.trim() || !description.trim()}
+          >
+            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+            {analyzing ? "Analyzing…" : "AI Analyze Issue"}
+          </Button>
+
+          {/* AI Result Card */}
+          {aiResult && (
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 text-xs">
+              <div className="flex items-center gap-1.5 font-semibold text-primary">
+                <Brain className="h-3.5 w-3.5" /> AI Analysis
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-muted-foreground">Priority</p>
+                  <p className="font-bold text-sm">{aiResult.priority}/100</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Category</p>
+                  <p className="font-medium">{aiResult.suggestedCategory}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Responder</p>
+                  <p className="font-medium">{aiResult.responderType}</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground italic">{aiResult.summary}</p>
+            </div>
+          )}
+
           <button type="button" className="flex h-20 w-full items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground transition-colors hover:bg-muted/50">
             <ImagePlus className="h-4 w-4" /> Upload images (simulated)
           </button>
