@@ -1,101 +1,54 @@
 
 
-# SahyogAI — Hero Redesign, Dashboard Refactor, Skeletons & AI Integration
+# SahyogAI — Google Gemini API Key Integration, Codebase Enhancements & Testing
 
-## 1. Hero Section Redesign
+## 1. Add Your Own Google Gemini API Key
 
-Replace the current `ImageCarouselHero` with a new `HeroSection` component using **framer-motion** for polished animations.
+The current edge functions (`chat` and `analyze-issue`) route through the Lovable AI Gateway. We will modify them to call Google's Gemini API directly using your own API key.
 
-**New file:** `src/components/ui/hero-section.tsx`
-- Adapted from the provided `hero-section-9.tsx` (no Next.js dependencies)
-- Two-column layout: left text content with staggered animations, right image collage with floating/parallax effects
-- Stats bar with icons (lucide-react: `Users`, `Building2`, `Heart`)
-- Two CTA buttons: "Get Started" (primary) + "Learn More" (outline, scrolls to features)
+**Steps:**
+- Use the secrets tool to request your `GOOGLE_GEMINI_API_KEY` — you get this from [Google AI Studio](https://aistudio.google.com/apikey)
+- Update `supabase/functions/chat/index.ts` to call `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent` with your key
+- Update `supabase/functions/analyze-issue/index.ts` to call the same Google endpoint (non-streaming, with structured output)
+- Both functions will fall back gracefully with clear error messages if the key is missing
 
-**Edit:** `src/pages/Index.tsx`
-- Replace `ImageCarouselHero` import with new `HeroSection`
-- Pass SahyogAI-themed props: community volunteer images from Unsplash, stats (15K+ volunteers, 200+ NGOs, 50K+ issues resolved)
-
-**Install:** `framer-motion`
+**No changes needed on the frontend** — `src/lib/ai.ts` and `AIChatWidget.tsx` already consume these edge functions correctly.
 
 ---
 
-## 2. DashboardShell Refactor for Volunteer & Public Dashboards
+## 2. Codebase Enhancements
 
-Both dashboards currently use the `SidebarProvider`/`Sidebar` pattern from shadcn. Refactor to use the shared `DashboardShell` component (already used by Admin and NGO dashboards).
+### 2a. Missing AIChatWidget on Admin & NGO Dashboards
+- Add `<AIChatWidget />` to `DashboardAdmin.tsx` and `DashboardNGO.tsx` (currently only on Volunteer and Public dashboards)
 
-**Edit:** `src/pages/DashboardVolunteer.tsx`
-- Remove `VolunteerSidebar` component and `SidebarProvider` wrapper
-- Convert `sidebarItems` to `DashboardShell` format (`{ id, label, icon }`)
-- Wrap content in `<DashboardShell>` with notifications, panel label
+### 2b. AI-Powered Issue Analysis in Report Form
+- Update `IssueReportForm.tsx` to call `analyzeIssue()` after submission, showing AI-suggested priority and category before finalizing
 
-**Edit:** `src/pages/DashboardPublic.tsx`
-- Same refactor: remove `PublicSidebar`, use `DashboardShell`
+### 2c. DashboardAdmin Missing DashboardShell Props
+- `DashboardAdmin.tsx` already uses `DashboardShell` but verify it passes `sidebarOpen`/`onSidebarToggle` correctly (it does)
 
----
-
-## 3. Loading Skeletons & Empty States
-
-**New file:** `src/components/dashboard/DashboardSkeleton.tsx`
-- Reusable skeleton components: `MetricCardSkeleton`, `IssueCardSkeleton`, `TableRowSkeleton`, `SectionSkeleton`
-- Uses existing `Skeleton` component from `src/components/ui/skeleton.tsx`
-
-**New file:** `src/components/dashboard/EmptyState.tsx`
-- Generic empty state with icon, title, description, optional action button
-- Used when filtered lists return zero results or sections have no data
-
-**Edit:** All 4 dashboard pages — wrap section content with skeleton fallbacks and empty states for filtered lists.
+### 2d. Minor UI Fixes
+- Ensure `EmptyState` is used in Admin dashboard filtered views (issues table when empty)
+- Add `DashboardSkeleton` usage in overview sections with a brief simulated loading state
 
 ---
 
-## 4. Gemini AI Integration via Lovable AI Gateway
+## 3. Testing
 
-The project already has `LOVABLE_API_KEY` configured, which provides access to Google Gemini models through the Lovable AI Gateway. No separate Google API key is needed.
-
-**New file:** `supabase/functions/chat/index.ts`
-- Edge function calling Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`)
-- Model: `google/gemini-3-flash-preview`
-- Streaming SSE support
-- Handles 429/402 errors
-
-**New file:** `supabase/functions/analyze-issue/index.ts`
-- Non-streaming edge function for issue analysis
-- Takes issue title/description/category, returns priority score, suggested category, recommended responder type
-- Uses tool-calling for structured JSON output
-
-**New file:** `src/components/dashboard/AIChatWidget.tsx`
-- Floating chat button (bottom-right corner) available on all dashboards
-- Expandable chat panel with streaming message display
-- Uses `react-markdown` (already installed) for AI response rendering
-
-**New file:** `src/lib/ai.ts`
-- `streamChat()` helper for SSE streaming from the chat edge function
-- `analyzeIssue()` helper for structured issue analysis
-
-**Edit:** `supabase/config.toml` — add function entries with `verify_jwt = false`
-
-**Edit:** Dashboard pages — integrate AI chat widget and issue analysis into report forms
-
----
-
-## 5. Landing Page UI Polish
-
-**Edit:** `src/components/landing/FeaturesSection.tsx` — add scroll-reveal animations
-**Edit:** `src/components/landing/Navbar.tsx` — add nav links (Features, How It Works, Map) with smooth scroll
-**Edit:** `src/pages/Index.tsx` — add section IDs for anchor navigation, enhance footer with social links
+After deploying the edge functions:
+- Call the `chat` edge function with a test message to verify streaming works
+- Call the `analyze-issue` edge function with a sample issue to verify structured output
+- Check edge function logs for any errors
 
 ---
 
 ## Technical Details
 
-| Area | Details |
-|------|---------|
-| New dependency | `framer-motion` |
-| Edge functions | `chat`, `analyze-issue` — auto-deployed |
-| AI model | `google/gemini-3-flash-preview` via Lovable AI Gateway |
-| Auth for AI | `LOVABLE_API_KEY` (already configured) |
-| Skeleton pattern | Reuses `@/components/ui/skeleton` with dashboard-specific compositions |
-
-**Files to create:** 6 new files
-**Files to edit:** 7 existing files
+| Area | Change |
+|------|--------|
+| New secret | `GOOGLE_GEMINI_API_KEY` (user provides from Google AI Studio) |
+| Edge function: `chat` | Switch from Lovable Gateway to `generativelanguage.googleapis.com`, SSE streaming |
+| Edge function: `analyze-issue` | Switch to Google Gemini with `responseSchema` for structured JSON |
+| Frontend | No URL/auth changes needed — edge function URLs unchanged |
+| Files modified | 4 edge function files, 2-3 dashboard files |
 
