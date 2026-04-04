@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { issues as initialIssues, ngos, volunteers, alerts, type Issue, type Alert } from "@/data/mockData";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
+import { MapDashboard } from "@/components/dashboard/MapDashboard";
 import { FilterBar } from "@/components/dashboard/FilterBar";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
@@ -387,8 +387,12 @@ export default function DashboardVolunteer() {
       case "map":
         return (
           <div className="space-y-4">
-            <h2 className="text-base font-bold">Crisis Map & Navigation</h2>
-            <HeatmapPlaceholder issues={issueList} volunteers={[currentVol]} size="lg" onIssueClick={setSelectedIssue} showRoute showStats />
+            <MapDashboard
+              userRole="volunteer"
+              issues={issueList}
+              userLocation={currentVol.location}
+              onIssueClick={setSelectedIssue}
+            />
           </div>
         );
 

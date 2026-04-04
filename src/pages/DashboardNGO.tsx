@@ -3,7 +3,7 @@ import { issues as initialIssues, ngos, volunteers as initialVolunteers, alerts,
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
+import { MapDashboard } from "@/components/dashboard/MapDashboard";
 import { FilterBar } from "@/components/dashboard/FilterBar";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AIPriorityCard } from "@/components/dashboard/AIPriorityCard";
@@ -163,7 +163,11 @@ export default function DashboardNGO() {
             <div className="grid gap-6 lg:grid-cols-2">
               {topIssue && <AIPriorityCard issue={topIssue} />}
               <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
-                <HeatmapPlaceholder issues={ngoIssues} volunteers={volList} size="lg" onIssueClick={setSelectedIssue} showStats />
+                <MapDashboard
+                  userRole="ngo"
+                  issues={ngoIssues}
+                  onIssueClick={setSelectedIssue}
+                />
               </div>
             </div>
           </motion.div>
