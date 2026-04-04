@@ -16,13 +16,74 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GOOGLE_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
+    const LOVABLE_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+    if (GOOGLE_KEY) {
+      // --- Google Gemini direct with structured output ---
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{
+                  text: `You are an AI that analyzes community issues for a disaster relief platform. Analyze this issue and return JSON with: priority (number 0-100), suggestedCategory (one of: Health, Disaster, Food, Infrastructure, Environment, Safety), responderType (one of: Volunteer, NGO, Government, Medical Team, Emergency Services), summary (1-2 sentence analysis).
+
+Title: ${title}
+Description: ${description}
+Category: ${category || "Unknown"}`
+                }],
+              },
+            ],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  priority: { type: "NUMBER" },
+                  suggestedCategory: { type: "STRING", enum: ["Health", "Disaster", "Food", "Infrastructure", "Environment", "Safety"] },
+                  responderType: { type: "STRING", enum: ["Volunteer", "NGO", "Government", "Medical Team", "Emergency Services"] },
+                  summary: { type: "STRING" },
+                },
+                required: ["priority", "suggestedCategory", "responderType", "summary"],
+              },
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Gemini analyze error:", response.status, errText);
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limited, try again later." }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        throw new Error("Gemini API error: " + response.status);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error("No response from Gemini");
+
+      const result = JSON.parse(text);
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Lovable AI Gateway fallback ---
+    if (!LOVABLE_KEY) throw new Error("No AI API key configured. Set GOOGLE_GEMINI_API_KEY or LOVABLE_API_KEY.");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -42,14 +103,14 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "analyze_issue",
-              description: "Provide analysis of a community issue including priority score, suggested category, and recommended responder type.",
+              description: "Provide analysis of a community issue.",
               parameters: {
                 type: "object",
                 properties: {
                   priority: { type: "number", description: "Priority score 0-100" },
                   suggestedCategory: { type: "string", enum: ["Health", "Disaster", "Food", "Infrastructure", "Environment", "Safety"] },
                   responderType: { type: "string", enum: ["Volunteer", "NGO", "Government", "Medical Team", "Emergency Services"] },
-                  summary: { type: "string", description: "Brief analysis summary in 1-2 sentences" },
+                  summary: { type: "string", description: "Brief analysis summary" },
                 },
                 required: ["priority", "suggestedCategory", "responderType", "summary"],
                 additionalProperties: false,

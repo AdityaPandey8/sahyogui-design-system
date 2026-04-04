@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { issues as initialIssues, ngos as initialNgos, volunteers as initialVolunteers, alerts, pastCrises, type Issue, type NGO, type Volunteer } from "@/data/mockData";
+import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { HeatmapPlaceholder } from "@/components/dashboard/HeatmapPlaceholder";
@@ -432,6 +433,7 @@ export default function DashboardAdmin() {
       <CrisisDetailDialog crisis={selectedCrisis} open={!!selectedCrisis} onOpenChange={(open) => !open && setSelectedCrisis(null)} />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
       <TaskAssignDialog issue={assignIssue} open={!!assignIssue} onOpenChange={(open) => !open && setAssignIssue(null)} />
+      <AIChatWidget />
     </DashboardShell>
   );
 }
