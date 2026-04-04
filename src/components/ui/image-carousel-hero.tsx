@@ -58,7 +58,7 @@ export function ImageCarouselHero({
 
   useEffect(() => {
     setRotatingCards(images.map((_, i) => i * (360 / images.length)))
-  }, [images.length])
+  }, [images])
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
