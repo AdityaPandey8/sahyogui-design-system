@@ -55,7 +55,7 @@ const imageVariants = {
 
 const HeroSection = ({ title, subtitle, actions, stats, images, className }: HeroSectionProps) => {
   return (
-    <section className={cn('relative overflow-hidden bg-background pt-10 pb-16 md:pt-16 md:pb-24 lg:pt-20 lg:pb-32', className)}>
+    <section className={cn('relative overflow-hidden bg-background pt-8 pb-12 sm:pt-12 sm:pb-16 md:pt-16 md:pb-24 lg:pt-20 lg:pb-32', className)}>
       {/* Dynamic Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
         <motion.div 
@@ -86,34 +86,34 @@ const HeroSection = ({ title, subtitle, actions, stats, images, className }: Her
       </div>
 
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
           {/* Left Column: Text Content */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold text-primary border border-primary/20">
+            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary border border-primary/20">
                <Sparkles className="h-3 w-3" />
                <span>AI-Powered Crisis Coordination</span>
             </motion.div>
             
             <motion.h1
               variants={itemVariants}
-              className="text-4xl font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+              className="text-3xl font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl"
             >
               {title}
             </motion.h1>
             
             <motion.p
               variants={itemVariants}
-              className="max-w-xl text-lg text-muted-foreground leading-relaxed sm:text-xl"
+              className="max-w-xl text-base text-muted-foreground leading-relaxed sm:text-lg md:text-xl"
             >
               {subtitle}
             </motion.p>
             
-            <motion.div variants={itemVariants} className="flex flex-wrap gap-4 pt-2">
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
               {actions.map((action, index) => (
                 <Button
                   key={index}
@@ -121,7 +121,7 @@ const HeroSection = ({ title, subtitle, actions, stats, images, className }: Her
                   size="lg"
                   onClick={action.onClick}
                   className={cn(
-                    'h-12 px-8 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-primary/10', 
+                    'h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-primary/10 w-full sm:w-auto', 
                     action.variant === 'outline' ? 'bg-background/50 backdrop-blur-sm' : 'hover:shadow-primary/20',
                     action.className
                   )}
@@ -133,16 +133,16 @@ const HeroSection = ({ title, subtitle, actions, stats, images, className }: Her
             
             <motion.div
               variants={itemVariants}
-              className="grid grid-cols-3 gap-8 pt-8 border-t border-border/50"
+              className="grid grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-border/50"
             >
               {stats.map((stat, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                <div key={index} className="space-y-1 text-center sm:text-left">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm mx-auto sm:mx-0 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                     {stat.icon}
                   </div>
                   <div className="pt-2">
-                    <p className="text-xl font-bold text-foreground tracking-tight">{stat.value}</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+                    <p className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{stat.value}</p>
+                    <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
                   </div>
                 </div>
               ))}
@@ -153,10 +153,19 @@ const HeroSection = ({ title, subtitle, actions, stats, images, className }: Her
           <motion.div
             initial="hidden"
             animate="visible"
-            className="relative hidden lg:block h-[560px]"
+            className="relative h-[300px] sm:h-[400px] lg:h-[560px] mt-8 lg:mt-0"
           >
-            {/* Collage Container */}
-            <div className="relative h-full w-full">
+            {/* Mobile/Tablet: Single Image */}
+            <motion.div
+              variants={imageVariants}
+              className="lg:hidden h-full w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-border shadow-primary/10"
+            >
+              <img src={images[0]} alt="" className="h-full w-full object-cover transition-transform duration-700 hover:scale-110" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            </motion.div>
+
+            {/* Desktop: Collage Container */}
+            <div className="relative h-full w-full hidden lg:block">
               {/* Main Image */}
               <motion.div
                 variants={imageVariants}

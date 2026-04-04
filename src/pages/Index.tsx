@@ -4,6 +4,11 @@ import HeroSection from "@/components/ui/hero-section";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { MapPreviewSection } from "@/components/landing/MapPreviewSection";
+import { ImpactStatsSection } from "@/components/landing/ImpactStatsSection";
+import { RoadmapSection } from "@/components/landing/RoadmapSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { UseCasesSection } from "@/components/landing/UseCasesSection";
+import { PartnersSection } from "@/components/landing/PartnersSection";
 import { RoleSelectionDialog } from "@/components/landing/RoleSelectionDialog";
 import { LiveActivityTicker } from "@/components/landing/LiveActivityTicker";
 import { Users, Building2, Heart } from "lucide-react";
@@ -38,7 +43,7 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <Navbar onGetStarted={() => setModalOpen(true)} />
       
-      <div className="pt-16 md:pt-20">
+      <div className="pt-14 sm:pt-16 md:pt-20">
         <LiveActivityTicker />
       </div>
 
@@ -56,9 +61,9 @@ export default function Index() {
           { text: "Learn More", onClick: scrollToFeatures, variant: "outline" },
         ]}
         stats={[
-          { value: "15K+", label: "Active Volunteers", icon: <Users className="h-5 w-5" /> },
-          { value: "200+", label: "Partner NGOs", icon: <Building2 className="h-5 w-5" /> },
-          { value: "50K+", label: "Issues Resolved", icon: <Heart className="h-5 w-5" /> },
+          { value: "15K+", label: "Active Volunteers", icon: <Users className="h-4 w-4 sm:h-5 sm:w-5" /> },
+          { value: "200+", label: "Partner NGOs", icon: <Building2 className="h-4 w-4 sm:h-5 sm:w-5" /> },
+          { value: "50K+", label: "Issues Resolved", icon: <Heart className="h-4 w-4 sm:h-5 sm:w-5" /> },
         ]}
         images={[
           "https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&q=80&w=900",
@@ -68,13 +73,13 @@ export default function Index() {
       />
 
       {/* About */}
-      <section className="border-t py-20">
+      <section className="border-t py-12 sm:py-16 md:py-20">
         <div
           data-reveal
           className="mx-auto max-w-3xl px-4 text-center opacity-0 translate-y-3 blur-[4px] transition-all duration-700 ease-out"
         >
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Why SahyogAI?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground sm:text-3xl">Why SahyogAI?</h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
             In times of crisis, coordination is everything. SahyogAI uses artificial intelligence to instantly match verified community issues with the closest, most capable responders — reducing response time and maximizing impact.
           </p>
         </div>
@@ -83,9 +88,15 @@ export default function Index() {
       <div id="features">
         <FeaturesSection />
       </div>
-      <div id="how-it-works">
-        <HowItWorksSection />
+      <ImpactStatsSection />
+      <div id="use-cases">
+        <UseCasesSection />
       </div>
+      <div id="roadmap">
+        <RoadmapSection />
+      </div>
+      <TestimonialsSection />
+      <PartnersSection />
       <div id="map">
         <MapPreviewSection />
       </div>

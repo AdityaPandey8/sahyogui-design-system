@@ -2,11 +2,11 @@ import { MapPin } from "lucide-react";
 
 export function MapPreviewSection() {
   return (
-    <section className="border-t bg-secondary/30 py-20">
+    <section className="border-t bg-secondary/30 py-16 sm:py-20">
       <div className="mx-auto max-w-4xl px-4">
         <h2
           data-reveal
-          className="mb-8 text-center text-2xl font-bold text-foreground sm:text-3xl opacity-0 translate-y-3 blur-[4px] transition-all duration-700 ease-out"
+          className="mb-6 sm:mb-8 text-center text-2xl font-bold text-foreground sm:text-3xl opacity-0 translate-y-3 blur-[4px] transition-all duration-700 ease-out"
         >
           Live Issue Map
         </h2>
@@ -14,9 +14,9 @@ export function MapPreviewSection() {
           data-reveal
           className="relative overflow-hidden rounded-xl border bg-card shadow-sm opacity-0 translate-y-3 blur-[4px] transition-all duration-700 ease-out [transition-delay:100ms]"
         >
-          <div className="flex h-64 items-center justify-center bg-gradient-to-br from-primary/5 to-success/5 sm:h-80">
-            <div className="text-center">
-              <MapPin className="mx-auto mb-2 h-10 w-10 text-primary/40" />
+          <div className="flex h-48 sm:h-64 md:h-80 items-center justify-center bg-gradient-to-br from-primary/5 to-success/5">
+            <div className="text-center px-4">
+              <MapPin className="mx-auto mb-2 h-8 w-8 sm:h-10 sm:w-10 text-primary/40" />
               <p className="text-sm font-medium text-muted-foreground">Interactive map coming soon</p>
             </div>
           </div>
