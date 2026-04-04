@@ -12,13 +12,14 @@ import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion"
 import { type Notification } from "@/components/dashboard/NotificationBell";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { NetworkStatusWidget } from "@/components/dashboard/NetworkStatusWidget";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp,
   LayoutDashboard, FileText, Bell, Map, UserCircle, Trash2, Award, Star, TrendingUp,
-  Heart, Target, Clock
+  Heart, Target, Clock, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -130,74 +131,107 @@ export default function DashboardPublic() {
     switch (section) {
       case "home":
         return (
-          <div className="space-y-6">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <NetworkStatusWidget />
+            
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard icon={AlertTriangle} label="Total Issues" value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
-              <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+1" }} delay={80} />
-              <MetricCard icon={Flame} label="Active Emergencies" value={stats.high} delay={160} />
-              <MetricCard icon={User} label="Your Reports" value={myReports.length} delay={240} />
+              <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+1" }} delay={100} />
+              <MetricCard icon={Flame} label="Active Crises" value={stats.high} delay={200} />
+              <MetricCard icon={User} label="Your Reports" value={myReports.length} delay={300} />
             </div>
 
             {/* Live Alerts */}
             <div>
-              <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Siren className="h-3.5 w-3.5 text-destructive" /> Live Alerts</h2>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {alerts.map((a) => (
-                  <div key={a.id} className="min-w-[280px] shrink-0 cursor-pointer" onClick={() => setSelectedAlert(a)}>
+              <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Siren className="h-4 w-4 text-destructive animate-pulse" /> Live Regional Alerts
+              </h2>
+              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                {alerts.map((a, i) => (
+                  <motion.div 
+                    key={a.id} 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="min-w-[320px] shrink-0" 
+                    onClick={() => setSelectedAlert(a)}
+                  >
                     <AlertCard alert={a} />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
 
             <SafetyTipsAccordion />
-          </div>
+          </motion.div>
         );
 
       case "issues":
         return (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-base font-bold">Community Issues ({filtered.length})</h2>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                 <h2 className="text-xl font-bold tracking-tight">Community Issues</h2>
+                 <p className="text-xs text-muted-foreground mt-1">Verified reports from your local community</p>
+              </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => setReportOpen(true)} className="gap-1.5 active:scale-95">
-                  <Plus className="h-3.5 w-3.5" /> Report Issue
+                <Button size="sm" onClick={() => setReportOpen(true)} className="gap-2 rounded-xl font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all">
+                  <Plus className="h-4 w-4" /> Report Issue
                 </Button>
-                <Button size="sm" variant="destructive" onClick={handleEmergency} className="gap-1.5 animate-pulse hover:animate-none active:scale-95">
-                  <Siren className="h-3.5 w-3.5" /> Emergency
+                <Button size="sm" variant="destructive" onClick={handleEmergency} className="gap-2 rounded-xl font-bold animate-pulse hover:animate-none active:scale-95 transition-all shadow-lg shadow-destructive/20">
+                  <Siren className="h-4 w-4" /> Emergency
                 </Button>
               </div>
             </div>
-            <FilterBar
-              search={search}
-              onSearchChange={setSearch}
-              filters={[
-                { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
-                { label: "Status", value: statusFilter, onChange: setStatusFilter, options: [{ value: "Pending", label: "Pending" }, { value: "Verified", label: "Verified" }, { value: "In Progress", label: "In Progress" }, { value: "Solved", label: "Solved" }] },
-                { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: [{ value: "Health", label: "Health" }, { value: "Disaster", label: "Disaster" }, { value: "Food", label: "Food" }, { value: "Infrastructure", label: "Infra" }] },
-                { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l.split(",")[0] })) },
-              ]}
-            />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((issue) => {
-                const isOwn = issue.reportedBy === "You";
-                return (
-                  <div key={issue.id} className="relative">
-                    <div onClick={() => setSelectedIssue(issue)} className="cursor-pointer">
-                      <IssueCard issue={issue} />
-                    </div>
-                    {isOwn && (
-                      <Button size="sm" variant="destructive" className="absolute top-2 right-2 h-7 text-xs gap-1" onClick={() => handleDeleteReport(issue.id)}>
-                        <Trash2 className="h-3 w-3" /> Delete
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-              {filtered.length === 0 && <p className="col-span-full text-center text-sm text-muted-foreground py-8">No issues match your filters.</p>}
+            
+            <div className="rounded-2xl border bg-card/40 p-4 backdrop-blur-md">
+              <FilterBar
+                search={search}
+                onSearchChange={setSearch}
+                filters={[
+                  { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
+                  { label: "Status", value: statusFilter, onChange: setStatusFilter, options: [{ value: "Pending", label: "Pending" }, { value: "Verified", label: "Verified" }, { value: "In Progress", label: "In Progress" }, { value: "Solved", label: "Solved" }] },
+                  { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: [{ value: "Health", label: "Health" }, { value: "Disaster", label: "Disaster" }, { value: "Food", label: "Food" }, { value: "Infrastructure", label: "Infra" }] },
+                  { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l.split(",")[0] })) },
+                ]}
+              />
             </div>
-          </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <AnimatePresence>
+                {filtered.map((issue) => {
+                  const isOwn = issue.reportedBy === "You";
+                  return (
+                    <motion.div 
+                      key={issue.id} 
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="relative"
+                    >
+                      <div onClick={() => setSelectedIssue(issue)} className="cursor-pointer">
+                        <IssueCard issue={issue} />
+                      </div>
+                      {isOwn && (
+                        <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-7 w-7 rounded-lg shadow-lg" onClick={() => handleDeleteReport(issue.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+              {filtered.length === 0 && (
+                <div className="col-span-full py-20 text-center rounded-3xl border border-dashed border-muted-foreground/20 bg-muted/5">
+                   <Target className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                   <p className="text-sm text-muted-foreground font-medium">No reports found matching your filters.</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
         );
+
 
       case "alerts":
         return (

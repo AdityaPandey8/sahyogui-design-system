@@ -16,12 +16,14 @@ import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { VolunteerMatchCard } from "@/components/dashboard/VolunteerMatchCard";
 import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
+import { NetworkStatusWidget } from "@/components/dashboard/NetworkStatusWidget";
 import type { Notification } from "@/components/dashboard/NotificationBell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock,
@@ -142,79 +144,117 @@ export default function DashboardNGO() {
     switch (section) {
       case "overview":
         return (
-          <div className="space-y-8">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <NetworkStatusWidget />
+            
             <QuickActionBar actions={[
               { label: "Report Issue", icon: Plus, onClick: () => setReportOpen(true) },
               { label: crisisMode ? "Deactivate Crisis" : "Crisis Mode", icon: ShieldAlert, onClick: () => { setCrisisMode(!crisisMode); toast(crisisMode ? "Crisis mode off" : "🚨 Crisis mode activated!"); }, variant: crisisMode ? "destructive" : "outline" },
             ]} />
+            
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <MetricCard icon={BarChart3} label="Assigned" value={stats.assigned} delay={0} />
-              <MetricCard icon={AlertTriangle} label="Active" value={stats.active} trend={{ direction: "up", value: "+1" }} delay={80} />
-              <MetricCard icon={CheckCircle} label="Completed" value={stats.completed} trend={{ direction: "up", value: "+2" }} delay={160} />
-              <MetricCard icon={Clock} label="Avg Response" value={stats.avgResponse} trend={{ direction: "down", value: "-8m" }} delay={240} />
-              <MetricCard icon={Users} label="Volunteers" value={stats.activeVols} delay={320} />
+              <MetricCard icon={AlertTriangle} label="Active" value={stats.active} trend={{ direction: "up", value: "+1" }} delay={100} />
+              <MetricCard icon={CheckCircle} label="Completed" value={stats.completed} trend={{ direction: "up", value: "+2" }} delay={200} />
+              <MetricCard icon={Clock} label="Avg Response" value={stats.avgResponse} trend={{ direction: "down", value: "-8m" }} delay={300} />
+              <MetricCard icon={Users} label="Volunteers" value={stats.activeVols} delay={400} />
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
+            
+            <div className="grid gap-6 lg:grid-cols-2">
               {topIssue && <AIPriorityCard issue={topIssue} />}
-              <HeatmapPlaceholder issues={ngoIssues} volunteers={volList} size="lg" onIssueClick={setSelectedIssue} showStats />
+              <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
+                <HeatmapPlaceholder issues={ngoIssues} volunteers={volList} size="lg" onIssueClick={setSelectedIssue} showStats />
+              </div>
             </div>
-          </div>
+          </motion.div>
         );
 
       case "issues":
         return (
-          <div className="space-y-6">
-            <h2 className="text-base font-bold flex items-center gap-2"><Brain className="h-4 w-4 text-primary" /> Issue Management</h2>
-            <FilterBar search={search} onSearchChange={setSearch} filters={[
-              { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
-              { label: "Status", value: statusFilter, onChange: setStatusFilter, options: [{ value: "Pending", label: "Pending" }, { value: "Verified", label: "Verified" }, { value: "In Progress", label: "In Progress" }, { value: "Solved", label: "Solved" }] },
-              { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l })) },
-              { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: categories.map(c => ({ value: c, label: c })) },
-            ]} />
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {filtered.map((issue) => (
-                <div key={issue.id} className="rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-sm font-semibold leading-snug">{issue.title}</h3>
-                    <UrgencyBadge urgency={issue.urgency} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">{issue.location}</p>
-                  <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{issue.description}</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <StatusBadge status={issue.status} />
-                    <div className="flex gap-1">
-                      {!issue.assignedNgo && (
-                        <Button size="sm" className="h-7 text-xs" onClick={() => handleClaim(issue.id)}>
-                          <HandHelping className="h-3 w-3 mr-1" />Claim
-                        </Button>
-                      )}
-                      {issue.assignedNgo === currentNgo.id && (
-                        <Button size="sm" variant="ghost" className="h-7 text-xs text-danger" onClick={() => handleUnclaim(issue.id)}>
-                          <X className="h-3 w-3 mr-1" />Unclaim
-                        </Button>
-                      )}
-                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedIssue(issue)}>Details</Button>
-                      {issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
-                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAssignIssue(issue)}>
-                          <Users className="h-3 w-3 mr-1" />Assign
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  {issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
-                    <div className="mt-2 pt-2 border-t flex gap-1 flex-wrap">
-                      {(["Verified", "In Progress", "Solved"] as Issue["status"][]).map((s) => (
-                        <Button key={s} size="sm" variant={issue.status === s ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => handleStatusUpdate(issue.id, s)}>
-                          {s}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="flex items-center justify-between">
+               <div>
+                  <h2 className="text-xl font-bold tracking-tight">Mission Management</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Review and assign community reports</p>
+               </div>
+               <Button onClick={() => setReportOpen(true)} size="sm" className="gap-2 rounded-xl font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all">
+                  <Plus className="h-4 w-4" /> Log New Issue
+               </Button>
             </div>
-          </div>
+
+            <div className="rounded-2xl border bg-card/40 p-4 backdrop-blur-md">
+              <FilterBar search={search} onSearchChange={setSearch} filters={[
+                { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
+                { label: "Status", value: statusFilter, onChange: setStatusFilter, options: [{ value: "Pending", label: "Pending" }, { value: "Verified", label: "Verified" }, { value: "In Progress", label: "In Progress" }, { value: "Solved", label: "Solved" }] },
+                { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l })) },
+                { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: categories.map(c => ({ value: c, label: c })) },
+              ]} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <AnimatePresence>
+                {filtered.map((issue) => (
+                  <motion.div 
+                    key={issue.id} 
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="group relative rounded-2xl border bg-card/50 p-5 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-primary/5"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-bold leading-tight group-hover:text-primary transition-colors truncate">{issue.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{issue.location}</p>
+                      </div>
+                      <UrgencyBadge urgency={issue.urgency} />
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{issue.description}</p>
+                    
+                    <div className="flex items-center justify-between gap-2 pt-4 border-t border-border/50">
+                      <StatusBadge status={issue.status} />
+                      <div className="flex gap-1.5">
+                        {!issue.assignedNgo && (
+                          <Button size="sm" className="rounded-xl font-bold active:scale-95 transition-all" onClick={() => handleClaim(issue.id)}>
+                            <HandHelping className="h-3.5 w-3.5 mr-1.5" />Claim
+                          </Button>
+                        )}
+                        {issue.assignedNgo === currentNgo.id && (
+                          <Button size="sm" variant="ghost" className="rounded-xl font-bold text-destructive hover:bg-destructive/10 transition-all" onClick={() => handleUnclaim(issue.id)}>
+                            <X className="h-3.5 w-3.5 mr-1.5" />Release
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="rounded-xl font-bold active:scale-95" onClick={() => setSelectedIssue(issue)}>Details</Button>
+                        {issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
+                          <Button size="sm" variant="outline" className="rounded-xl font-bold active:scale-95" onClick={() => setAssignIssue(issue)}>
+                            <Users className="h-3.5 w-3.5 mr-1.5" />Assign
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
+                      <div className="mt-4 pt-3 border-t border-dashed flex gap-1.5 flex-wrap">
+                        {(["Verified", "In Progress", "Solved"] as Issue["status"][]).map((s) => (
+                          <Button 
+                            key={s} 
+                            size="sm" 
+                            variant={issue.status === s ? "default" : "outline"} 
+                            className="h-7 text-[10px] font-bold px-3 rounded-lg active:scale-95 transition-all" 
+                            onClick={() => handleStatusUpdate(issue.id, s)}
+                          >
+                            {s}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
         );
+
 
       case "volunteers":
         return (

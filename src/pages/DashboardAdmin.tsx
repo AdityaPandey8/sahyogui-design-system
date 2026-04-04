@@ -15,17 +15,19 @@ import { VolunteerDetailDialog } from "@/components/dashboard/VolunteerDetailDia
 import { CrisisDetailDialog } from "@/components/dashboard/CrisisDetailDialog";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { TaskAssignDialog } from "@/components/dashboard/TaskAssignDialog";
+import { NetworkStatusWidget } from "@/components/dashboard/NetworkStatusWidget";
 import type { Notification } from "@/components/dashboard/NotificationBell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock, Plus, Megaphone,
   ShieldAlert, Brain, Send, Flag, Activity, LayoutDashboard, FileText,
-  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake
+  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import type { PastCrisis, Alert as AlertType } from "@/data/mockData";
@@ -136,85 +138,123 @@ export default function DashboardAdmin() {
     switch (section) {
       case "overview":
         return (
-          <div className="space-y-8">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <NetworkStatusWidget />
+            
             <QuickActionBar actions={[
               { label: "Add Issue", icon: Plus, onClick: () => setReportOpen(true) },
               { label: crisisMode ? "Deactivate Crisis" : "Activate Crisis", icon: ShieldAlert, onClick: () => { setCrisisMode(!crisisMode); toast(crisisMode ? "Crisis mode deactivated" : "🚨 Crisis mode activated!"); }, variant: crisisMode ? "destructive" : "outline" },
             ]} />
+            
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <MetricCard icon={BarChart3} label="Total Issues" value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
-              <MetricCard icon={AlertTriangle} label="Active Crises" value={stats.active} trend={{ direction: "up", value: "+1" }} delay={80} />
-              <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+2" }} delay={160} />
-              <MetricCard icon={Clock} label="Avg Response" value={stats.avgResponse} trend={{ direction: "down", value: "-12m" }} delay={240} />
-              <MetricCard icon={Users} label="Active Volunteers" value={stats.activeVols} delay={320} />
+              <MetricCard icon={AlertTriangle} label="Active Crises" value={stats.active} trend={{ direction: "up", value: "+1" }} delay={100} />
+              <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+2" }} delay={200} />
+              <MetricCard icon={Clock} label="Avg Response" value={stats.avgResponse} trend={{ direction: "down", value: "-12m" }} delay={300} />
+              <MetricCard icon={Users} label="Active Volunteers" value={stats.activeVols} delay={400} />
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
+            
+            <div className="grid gap-6 lg:grid-cols-2">
               {topIssue && <AIPriorityCard issue={topIssue} />}
-              <HeatmapPlaceholder issues={issueList} volunteers={volList} size="lg" onIssueClick={setSelectedIssue} showStats />
+              <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
+                <HeatmapPlaceholder issues={issueList} volunteers={volList} size="lg" onIssueClick={setSelectedIssue} showStats />
+              </div>
             </div>
+
             {/* Verification quick view */}
             {pendingIssues.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Flag className="h-3.5 w-3.5 text-warning" /> Pending Verification ({pendingIssues.length})</h2>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {pendingIssues.slice(0, 4).map((issue) => (
-                    <div key={issue.id} className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-sm">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{issue.title}</p>
-                        <p className="text-xs text-muted-foreground">{issue.location}</p>
-                      </div>
-                      <div className="flex gap-1 shrink-0 ml-2">
-                        <Button size="sm" className="h-7 text-xs" onClick={() => handleVerify(issue.id)}>Verify</Button>
-                        <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleReject(issue.id)}>Reject</Button>
-                      </div>
-                    </div>
-                  ))}
+              <div className="pt-4">
+                <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Flag className="h-4 w-4 text-warning" /> Verification Queue ({pendingIssues.length})
+                </h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <AnimatePresence>
+                    {pendingIssues.slice(0, 4).map((issue) => (
+                      <motion.div 
+                        key={issue.id} 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="flex items-center justify-between rounded-2xl border bg-card/50 p-4 backdrop-blur-sm transition-all hover:shadow-lg"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold truncate tracking-tight">{issue.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{issue.location}</p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0 ml-4">
+                          <Button size="sm" className="h-8 rounded-lg font-bold active:scale-95 transition-all" onClick={() => handleVerify(issue.id)}>Verify</Button>
+                          <Button size="sm" variant="destructive" className="h-8 rounded-lg font-bold active:scale-95 transition-all" onClick={() => handleReject(issue.id)}>Reject</Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         );
 
       case "issues":
         return (
-          <div className="space-y-6">
-            <h2 className="text-base font-bold flex items-center gap-2"><Brain className="h-4 w-4 text-primary" /> Issue Management</h2>
-            <FilterBar search={search} onSearchChange={setSearch} filters={[
-              { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
-              { label: "Status", value: statusFilter, onChange: setStatusFilter, options: [{ value: "Pending", label: "Pending" }, { value: "Verified", label: "Verified" }, { value: "In Progress", label: "In Progress" }, { value: "Solved", label: "Solved" }] },
-              { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l })) },
-              { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: categories.map(c => ({ value: c, label: c })) },
-            ]} />
-            <div className="rounded-xl border overflow-auto">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="flex items-center justify-between">
+               <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+                  <Brain className="h-5 w-5 text-primary" /> Central Issue Repository
+               </h2>
+               <Button onClick={() => setReportOpen(true)} size="sm" className="gap-2 rounded-xl font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all">
+                  <Plus className="h-4 w-4" /> Add Manual Entry
+               </Button>
+            </div>
+
+            <div className="rounded-2xl border bg-card/40 p-4 backdrop-blur-md">
+              <FilterBar search={search} onSearchChange={setSearch} filters={[
+                { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
+                { label: "Status", value: statusFilter, onChange: setStatusFilter, options: [{ value: "Pending", label: "Pending" }, { value: "Verified", label: "Verified" }, { value: "In Progress", label: "In Progress" }, { value: "Solved", label: "Solved" }] },
+                { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l })) },
+                { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: categories.map(c => ({ value: c, label: c })) },
+              ]} />
+            </div>
+
+            <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="w-[50px]">Score</TableHead>
-                    <TableHead>Issue</TableHead>
-                    <TableHead className="hidden sm:table-cell">Location</TableHead>
-                    <TableHead>Urgency</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Category</TableHead>
-                    <TableHead className="hidden md:table-cell">Affected</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[60px] font-bold text-xs uppercase tracking-widest text-muted-foreground">AI Score</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Issue Details</TableHead>
+                    <TableHead className="hidden sm:table-cell font-bold text-xs uppercase tracking-widest text-muted-foreground">Urgency</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                    <TableHead className="hidden md:table-cell font-bold text-xs uppercase tracking-widest text-muted-foreground">Impacted</TableHead>
+                    <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {prioritySorted.map((issue) => (
-                    <TableRow key={issue.id} className="transition-colors hover:bg-muted/50">
-                      <TableCell className="font-bold tabular-nums">{issue.aiPriorityScore}</TableCell>
-                      <TableCell className="font-medium text-xs max-w-[180px] truncate">{issue.title}</TableCell>
-                      <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{issue.location}</TableCell>
-                      <TableCell><UrgencyBadge urgency={issue.urgency} /></TableCell>
+                    <TableRow key={issue.id} className="transition-colors hover:bg-primary/5 border-border/50">
+                      <TableCell>
+                         <div className={cn(
+                           "flex h-8 w-8 items-center justify-center rounded-lg font-bold text-xs tabular-nums shadow-sm",
+                           issue.aiPriorityScore > 80 ? "bg-destructive/10 text-destructive border border-destructive/20" : 
+                           issue.aiPriorityScore > 50 ? "bg-warning/10 text-warning border border-warning/20" : 
+                           "bg-primary/10 text-primary border border-primary/20"
+                         )}>
+                           {issue.aiPriorityScore}
+                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[240px]">
+                           <p className="font-bold text-sm truncate tracking-tight">{issue.title}</p>
+                           <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{issue.location} · {issue.category}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell"><UrgencyBadge urgency={issue.urgency} /></TableCell>
                       <TableCell><StatusBadge status={issue.status} /></TableCell>
-                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{issue.category}</TableCell>
-                      <TableCell className="hidden md:table-cell tabular-nums text-xs">{issue.affectedPeople.toLocaleString()}</TableCell>
+                      <TableCell className="hidden md:table-cell tabular-nums text-xs font-semibold">{issue.affectedPeople.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedIssue(issue)}><Eye className="h-3 w-3 mr-1" />View</Button>
-                          {issue.status === "Pending" && <Button size="sm" className="h-7 text-xs" onClick={() => handleVerify(issue.id)}>Verify</Button>}
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleEscalate(issue.id)}>Escalate</Button>
-                          <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleDelete(issue.id)}><Trash2 className="h-3 w-3" /></Button>
+                        <div className="flex justify-end gap-1.5">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setSelectedIssue(issue)}><Eye className="h-4 w-4" /></Button>
+                          {issue.status === "Pending" && <Button size="sm" className="h-8 rounded-lg font-bold px-3 active:scale-95 transition-all" onClick={() => handleVerify(issue.id)}>Verify</Button>}
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-warning/10 hover:text-warning transition-colors" onClick={() => handleEscalate(issue.id)}><Sparkles className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => handleDelete(issue.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -222,8 +262,9 @@ export default function DashboardAdmin() {
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </motion.div>
         );
+
 
       case "ngos":
         return (

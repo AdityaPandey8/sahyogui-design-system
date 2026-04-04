@@ -14,17 +14,18 @@ import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
 import { type Notification } from "@/components/dashboard/NotificationBell";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { NetworkStatusWidget } from "@/components/dashboard/NetworkStatusWidget";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
   LayoutDashboard, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
-  Send, X, Building2, Eye, ChevronDown, ChevronRight
+  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -191,85 +192,149 @@ export default function DashboardVolunteer() {
     switch (section) {
       case "overview":
         return (
-          <div className="space-y-6">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <NetworkStatusWidget />
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <MetricCard icon={BarChart3} label="Assigned" value={stats.assigned} delay={0} />
-              <MetricCard icon={CheckCircle} label="Completed" value={stats.completed} trend={{ direction: "up", value: "+2" }} delay={80} />
-              <MetricCard icon={AlertTriangle} label="Active" value={stats.active} delay={160} />
-              <MetricCard icon={Star} label="Reliability" value={stats.reliability} delay={240} />
-              <MetricCard icon={Trophy} label="Badges" value={stats.badges} delay={320} />
+              <MetricCard icon={CheckCircle} label="Completed" value={stats.completed} trend={{ direction: "up", value: "+2" }} delay={100} />
+              <MetricCard icon={AlertTriangle} label="Active" value={stats.active} delay={200} />
+              <MetricCard icon={Star} label="Reliability" value={stats.reliability} delay={300} />
+              <MetricCard icon={Trophy} label="Badges" value={stats.badges} delay={400} />
             </div>
 
-            {bestMatch && !acceptedTasks.includes(bestMatch.id) && (
-              <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-5 transition-all hover:shadow-md">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="relative">
-                    <Brain className="h-4 w-4 text-primary" />
-                    <Sparkles className="absolute -top-1 -right-1 h-2.5 w-2.5 text-primary animate-pulse" />
+            <AnimatePresence>
+              {bestMatch && !acceptedTasks.includes(bestMatch.id) && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="relative overflow-hidden rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 backdrop-blur-md shadow-xl shadow-primary/5 group"
+                >
+                  <div className="absolute top-0 right-0 p-4">
+                     <div className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-[10px] font-bold text-primary animate-pulse">
+                        <Sparkles className="h-3 w-3" /> BEST MATCH
+                     </div>
                   </div>
-                  <span className="text-xs font-bold text-primary">AI RECOMMENDED FOR YOU</span>
-                  <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary tabular-nums">{matchScore}% match</span>
-                </div>
-                <h3 className="text-sm font-semibold mb-1">{bestMatch.title}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{bestMatch.description}</p>
-                <div className="rounded-lg bg-background/60 border border-border/50 p-2 mb-3">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Why this task?</p>
-                  <p className="text-xs font-medium">{matchReason}</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{bestMatch.distance.toFixed(1)} km</span>
-                    <UrgencyBadge urgency={bestMatch.urgency} />
+
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform">
+                      <Brain className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold tracking-tight">{bestMatch.title}</h3>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{bestMatch.distance.toFixed(1)} km away</span>
+                        <span>•</span>
+                        <UrgencyBadge urgency={bestMatch.urgency} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 max-w-2xl">{bestMatch.description}</p>
+                  
+                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                    <div className="rounded-xl bg-background/50 border border-border/50 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">AI Recommendation Insight</p>
+                      <p className="text-xs font-semibold text-foreground leading-snug">{matchReason}</p>
+                    </div>
+                    <div className="rounded-xl bg-background/50 border border-border/50 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Match Confidence</p>
+                      <div className="flex items-center gap-3">
+                         <Progress value={matchScore} className="h-1.5 flex-1" />
+                         <span className="text-xs font-bold tabular-nums text-primary">{matchScore}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
                     <StatusBadge status={bestMatch.status} />
+                    <Button size="lg" className="px-8 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all" onClick={() => handleAccept(bestMatch.id)}>
+                       Accept Mission
+                    </Button>
                   </div>
-                  <Button size="sm" className="active:scale-95" onClick={() => handleAccept(bestMatch.id)}>Accept Task</Button>
-                </div>
-              </div>
-            )}
+                  
+                  {/* Glass decorative overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <BadgeDisplay tasksCompleted={currentVol.tasksCompleted} reliabilityScore={currentVol.reliabilityScore} />
-          </div>
+          </motion.div>
         );
 
       case "tasks":
         return (
-          <div className="space-y-4">
-            <h2 className="text-base font-bold">My Tasks ({myTasks.length})</h2>
-            {myTasks.length === 0 && <p className="text-sm text-muted-foreground py-8 text-center">No tasks accepted yet. Go to Nearby Issues to find tasks.</p>}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {myTasks.map((task) => {
-                const isComplete = completedTasks.includes(task.id);
-                const ngo = ngos.find((n) => n.id === task.assignedNgo);
-                const isSelfReported = task.reportedBy === "You" || task.reportedBy === currentVol.name;
-                return (
-                  <div key={task.id} className={cn("rounded-xl border p-4 transition-all hover:shadow-md", isComplete ? "bg-success/5 border-success/20" : "bg-card")}>
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-sm font-semibold leading-snug">{task.title}</h3>
-                      <StatusBadge status={task.status} />
-                    </div>
-                    {ngo && <p className="text-[10px] text-muted-foreground mb-2">NGO: {ngo.name}</p>}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {!isComplete && (
-                        <>
-                          <Button size="sm" className="h-7 text-xs active:scale-95" onClick={() => handleComplete(task.id)}>
-                            <CheckCircle className="h-3 w-3 mr-1" />Complete
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 active:scale-95"><Upload className="h-3 w-3" />Upload Proof</Button>
-                        </>
-                      )}
-                      <Button size="sm" variant="outline" className="h-7 text-xs active:scale-95" onClick={() => setSelectedIssue(task)}>Details</Button>
-                      {isSelfReported && (
-                        <Button size="sm" variant="destructive" className="h-7 text-xs gap-1 active:scale-95" onClick={() => handleDeleteReport(task.id)}>
-                          <Trash2 className="h-3 w-3" /> Delete
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                 <h2 className="text-xl font-bold tracking-tight">Active Missions</h2>
+                 <p className="text-xs text-muted-foreground mt-1">Missions currently assigned to you</p>
+              </div>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold">{myTasks.length} TOTAL</span>
             </div>
-          </div>
+
+            {myTasks.length === 0 && (
+              <div className="py-20 text-center rounded-3xl border border-dashed border-muted-foreground/20 bg-muted/5">
+                <ListTodo className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground font-medium">No active missions. Check "Nearby Issues" to contribute.</p>
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <AnimatePresence>
+                {myTasks.map((task) => {
+                  const isComplete = completedTasks.includes(task.id);
+                  const ngo = ngos.find((n) => n.id === task.assignedNgo);
+                  const isSelfReported = task.reportedBy === "You" || task.reportedBy === currentVol.name;
+                  return (
+                    <motion.div 
+                      key={task.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn(
+                        "group relative rounded-2xl border p-5 transition-all hover:shadow-xl", 
+                        isComplete ? "bg-success/5 border-success/20 opacity-75" : "bg-card hover:shadow-primary/5"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base font-bold leading-tight group-hover:text-primary transition-colors truncate">{task.title}</h3>
+                          {ngo && <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Coordinating NGO: {ngo.name}</p>}
+                        </div>
+                        <StatusBadge status={task.status} />
+                      </div>
+                      
+                      <div className="flex items-center gap-4 mb-5 text-xs text-muted-foreground">
+                         <span className="flex items-center gap-1.5 font-medium"><MapPin className="h-3.5 w-3.5" /> {task.location}</span>
+                         <UrgencyBadge urgency={task.urgency} />
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap pt-4 border-t border-border/50">
+                        {!isComplete && (
+                          <>
+                            <Button size="sm" className="rounded-xl font-bold shadow-sm active:scale-95" onClick={() => handleComplete(task.id)}>
+                              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />Mark Complete
+                            </Button>
+                            <Button size="sm" variant="outline" className="rounded-xl font-bold gap-1.5 active:scale-95"><Upload className="h-3.5 w-3.5" />Upload Proof</Button>
+                          </>
+                        )}
+                        <Button size="sm" variant="outline" className="rounded-xl font-bold active:scale-95" onClick={() => setSelectedIssue(task)}>Details</Button>
+                        {isSelfReported && (
+                          <Button size="icon" variant="destructive" className="rounded-xl h-8 w-8 ml-auto active:scale-95" onClick={() => handleDeleteReport(task.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </motion.div>
         );
+
 
       case "issues":
         return (
