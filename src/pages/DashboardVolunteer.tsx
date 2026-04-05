@@ -297,6 +297,7 @@ export default function DashboardVolunteer() {
                 </div>
               </div>
             )}
+          </motion.div>
         );
 
       case "tasks":
