@@ -1,6 +1,7 @@
-import { MapPin, ThumbsUp, MessageSquare, Brain, Activity, Heart, Shield, Droplets, AlertTriangle, HelpCircle, HardHat, Phone } from "lucide-react";
+import { MapPin, ThumbsUp, MessageSquare, Brain, Activity, Heart, Shield, Droplets, AlertTriangle, HelpCircle, HardHat, Phone, Clock, Users, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Issue, Category } from "@/data/mockData";
+import { calcPriorityScore, predictResponseTime, estimateVolunteers } from "@/lib/ai-insights";
 import { StatusBadge } from "./StatusBadge";
 import { UrgencyBadge } from "./UrgencyBadge";
 import { motion } from "framer-motion";
@@ -23,6 +24,10 @@ const categoryIcons: Record<Category, React.ReactNode> = {
 };
 
 export function IssueCard({ issue }: { issue: Issue }) {
+  const score = calcPriorityScore(issue);
+  const respTime = predictResponseTime(issue);
+  const volsNeeded = estimateVolunteers(issue);
+
   const timeAgo = (date: string) => {
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
@@ -66,16 +71,20 @@ export function IssueCard({ issue }: { issue: Issue }) {
            <div
             className={cn(
               "absolute inset-y-0 left-0 rounded-full transition-all duration-1000",
-              issue.aiPriorityScore > 80 ? "bg-destructive" : issue.aiPriorityScore > 50 ? "bg-warning" : "bg-primary"
+              score > 80 ? "bg-destructive" : score > 50 ? "bg-warning" : "bg-primary"
             )}
-            style={{ width: `${issue.aiPriorityScore}%` }}
+            style={{ width: `${score}%` }}
            />
         </div>
         <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
           <span className="flex items-center gap-1 text-muted-foreground"><Brain className="h-3 w-3" /> AI Priority</span>
           <span className={cn(
-            issue.aiPriorityScore > 80 ? "text-destructive" : issue.aiPriorityScore > 50 ? "text-warning" : "text-primary"
-          )}>{issue.aiPriorityScore}%</span>
+            score > 80 ? "text-destructive" : score > 50 ? "text-warning" : "text-primary"
+          )}>{score}%</span>
+        </div>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" />{respTime}m</span>
+          <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{volsNeeded} vol</span>
         </div>
       </div>
 
