@@ -15,6 +15,7 @@ import { ActivityLog, type Activity } from "@/components/dashboard/ActivityLog";
 import { type Notification } from "@/components/dashboard/NotificationBell";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
+import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
 import { NetworkStatusWidget } from "@/components/dashboard/NetworkStatusWidget";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { calcPriorityScore } from "@/lib/ai-insights";
 
 const currentVol = volunteers[0];
 
@@ -261,6 +263,40 @@ export default function DashboardVolunteer() {
             </AnimatePresence>
 
             <BadgeDisplay tasksCompleted={currentVol.tasksCompleted} reliabilityScore={currentVol.reliabilityScore} />
+
+            {/* Recommended Tasks */}
+            {nearbyIssues.length > 0 && (
+              <div>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-primary" /> AI Recommended Tasks
+                </h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[...nearbyIssues]
+                    .filter(i => !acceptedTasks.includes(i.id))
+                    .sort((a, b) => calcPriorityScore(b) - calcPriorityScore(a))
+                    .slice(0, 4)
+                    .map(issue => {
+                      const score = calcPriorityScore(issue);
+                      return (
+                        <div key={issue.id} className="rounded-xl border bg-card p-4 shadow-card hover:shadow-hover transition-shadow">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="text-sm font-semibold leading-snug truncate">{issue.title}</h3>
+                            <span className={cn(
+                              "shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold tabular-nums",
+                              score >= 80 ? "bg-destructive/10 text-destructive" : score >= 50 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+                            )}>{score}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1"><MapPin className="h-3 w-3" />{issue.location}</p>
+                          <div className="flex items-center justify-between">
+                            <UrgencyBadge urgency={issue.urgency} />
+                            <Button size="sm" className="h-7 text-xs rounded-lg active:scale-95" onClick={() => handleAccept(issue.id)}>Accept</Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
           </motion.div>
         );
 
@@ -584,7 +620,7 @@ export default function DashboardVolunteer() {
       </DashboardShell>
 
       <IssueReportForm open={reportOpen} onOpenChange={setReportOpen} onSubmit={handleNewIssue} />
-      <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} />
+      <IssueDetailDialog issue={selectedIssue} open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)} showAIInsights />
       <AlertDetailDialog alert={selectedAlert} open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)} />
       <NGODetailDialog ngo={selectedNgo} open={!!selectedNgo} onOpenChange={(open) => !open && setSelectedNgoId(null)} />
       <AIChatWidget />

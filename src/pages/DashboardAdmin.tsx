@@ -7,6 +7,7 @@ import { MapDashboard } from "@/components/dashboard/MapDashboard";
 import { FilterBar } from "@/components/dashboard/FilterBar";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AIPriorityCard } from "@/components/dashboard/AIPriorityCard";
+import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
 import { QuickActionBar } from "@/components/dashboard/QuickActionBar";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
@@ -155,7 +156,7 @@ export default function DashboardAdmin() {
             </div>
             
             <div className="grid gap-6 lg:grid-cols-2">
-              {topIssue && <AIPriorityCard issue={topIssue} />}
+              {topIssue && <AIInsightsPanel issue={topIssue} />}
               <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
                 <MapDashboard
                   userRole="admin"
