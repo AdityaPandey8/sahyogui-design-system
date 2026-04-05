@@ -2,12 +2,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Clock, Users, ThumbsUp, MessageSquare, Star, Brain, Zap, Sparkles, Image, Trash2 } from "lucide-react";
+import { MapPin, Clock, Users, ThumbsUp, MessageSquare, Star, Image, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ngos, volunteers, type Issue } from "@/data/mockData";
+import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
 
 interface IssueDetailDialogProps {
   issue: Issue | null;
@@ -89,35 +90,7 @@ export function IssueDetailDialog({ issue, open, onOpenChange, onUpvote, onComme
         )}
 
         {/* AI Insights Panel */}
-        {showAIInsights && (
-          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="relative">
-                <Brain className="h-4 w-4 text-primary" />
-                <Sparkles className="absolute -top-1 -right-1 h-2 w-2 text-primary animate-pulse" />
-              </div>
-              <span className="text-xs font-bold">AI Analysis</span>
-              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                <span className="h-1 w-1 rounded-full bg-primary animate-pulse" /> LIVE
-              </span>
-            </div>
-            <div className="mb-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><Zap className="h-3 w-3" /> Priority Score</span>
-                <span className={cn("text-base font-bold tabular-nums", scoreColor)}>{issue.aiPriorityScore}</span>
-              </div>
-              <Progress value={issue.aiPriorityScore} className={cn("h-1.5", progressColor)} />
-            </div>
-            <div className="rounded-md bg-background/60 border border-border/50 p-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Suggested Action</p>
-              <p className="text-xs font-medium">
-                {issue.aiPriorityScore >= 80
-                  ? `Deploy ${Math.ceil(issue.affectedPeople / 300)} volunteers immediately`
-                  : `Assign ${Math.ceil(issue.affectedPeople / 500)} volunteers within 2 hours`}
-              </p>
-            </div>
-          </div>
-        )}
+        {showAIInsights && <AIInsightsPanel issue={issue} compact />}
 
         {/* Progress timeline */}
         <div className="space-y-2">
