@@ -46,64 +46,62 @@ Deno.serve(async (req) => {
       if (!response.ok) {
         const errText = await response.text();
         console.error("Gemini error:", response.status, errText);
-        // Fall through to Lovable Gateway on error instead of returning error
-        if (LOVABLE_KEY) {
-          console.log("Gemini failed, falling back to Lovable Gateway...");
-        } else {
+        if (!LOVABLE_KEY) {
           return new Response(JSON.stringify({ error: `Gemini API error: ${response.status}`, details: errText }), {
             status: response.status === 429 ? 429 : 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-      }
+        console.log("Gemini failed, falling back to Lovable Gateway...");
+      } else {
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        const encoder = new TextEncoder();
 
-      const { readable, writable } = new TransformStream();
-      const writer = writable.getWriter();
-      const encoder = new TextEncoder();
+        (async () => {
+          const reader = response.body!.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
 
-      (async () => {
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
+              let newlineIdx: number;
+              while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
+                const line = buffer.slice(0, newlineIdx).trim();
+                buffer = buffer.slice(newlineIdx + 1);
 
-            let newlineIdx: number;
-            while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
-              const line = buffer.slice(0, newlineIdx).trim();
-              buffer = buffer.slice(newlineIdx + 1);
+                if (!line.startsWith("data: ")) continue;
+                const jsonStr = line.slice(6);
+                if (!jsonStr) continue;
 
-              if (!line.startsWith("data: ")) continue;
-              const jsonStr = line.slice(6);
-              if (!jsonStr) continue;
-
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                  const openaiChunk = {
-                    choices: [{ delta: { content: text }, index: 0, finish_reason: null }],
-                  };
-                  await writer.write(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
-                }
-              } catch { /* ignore parse errors in stream */ }
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (text) {
+                    const openaiChunk = {
+                      choices: [{ delta: { content: text }, index: 0, finish_reason: null }],
+                    };
+                    await writer.write(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
+                  }
+                } catch { /* ignore parse errors in stream */ }
+              }
             }
+            await writer.write(encoder.encode("data: [DONE]\n\n"));
+          } catch (e) {
+            console.error("Stream transform error:", e);
+          } finally {
+            await writer.close();
           }
-          await writer.write(encoder.encode("data: [DONE]\n\n"));
-        } catch (e) {
-          console.error("Stream transform error:", e);
-        } finally {
-          await writer.close();
-        }
-      })();
+        })();
 
-      return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
+        return new Response(readable, {
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        });
+      }
     }
 
     if (LOVABLE_KEY) {
