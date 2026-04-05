@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-pro", // Updated model name for gateway
+          model: "google/gemini-2.0-flash",
           messages: [
             {
               role: "system",
