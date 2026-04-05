@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     if (GOOGLE_KEY) {
       console.log("Using Google Gemini direct...");
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -52,16 +52,19 @@ Category: ${category || "Unknown"}`
       if (!response.ok) {
         const errText = await response.text();
         console.error("Gemini error:", response.status, errText);
-        throw new Error(`Gemini API error: ${response.status}`);
+        if (!LOVABLE_KEY) {
+          throw new Error(`Gemini API error: ${response.status}`);
+        }
+        console.log("Gemini failed, falling back to Lovable Gateway...");
+      } else {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error("No response from Gemini");
+
+        return new Response(text, {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error("No response from Gemini");
-
-      return new Response(text, {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     if (LOVABLE_KEY) {
@@ -73,7 +76,7 @@ Category: ${category || "Unknown"}`
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             {
               role: "system",
