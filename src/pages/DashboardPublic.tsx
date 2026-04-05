@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { issues as initialIssues, alerts, type Issue, type Alert } from "@/data/mockData";
+import { useState, useMemo, useEffect } from "react";
+import { type Issue, type Alert } from "@/data/mockData";
+import { getIssues, getAlerts, createIssue, upvoteIssue } from "@/lib/supabase-service";
 import { IssueCard } from "@/components/IssueCard";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MapDashboard } from "@/components/dashboard/MapDashboard";
@@ -19,7 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Siren, AlertTriangle, CheckCircle, Flame, User, Shield, ThumbsUp,
   LayoutDashboard, FileText, Bell, Map, UserCircle, Trash2, Award, Star, TrendingUp,
-  Heart, Target, Clock, Sparkles
+  Heart, Target, Clock, Sparkles, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,9 @@ const profileBadges = [
 export default function DashboardPublic() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("home");
-  const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
+  const [issueList, setIssueList] = useState<Issue[]>([]);
+  const [alertList, setAlertList] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -62,6 +65,22 @@ export default function DashboardPublic() {
   const [reportOpen, setReportOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [issues, alerts] = await Promise.all([getIssues(), getAlerts()]);
+        setIssueList(issues);
+        setAlertList(alerts);
+      } catch (error) {
+        toast.error("Failed to load data from server");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const locations = useMemo(() => [...new Set(issueList.map(i => i.location))], [issueList]);
 
@@ -89,30 +108,40 @@ export default function DashboardPublic() {
   const trustScore = 8.5;
   const contributionPoints = 42 + myReports.length * 10 + totalUpvotesReceived;
 
-  const handleNewIssue = (issue: Issue) => {
-    setIssueList((prev) => [issue, ...prev]);
-    toast.success("Issue reported successfully!", { description: `ID: ${issue.id}` });
+  const handleNewIssue = async (issueData: Issue) => {
+    const result = await createIssue(issueData);
+    if (result) {
+      setIssueList((prev) => [result, ...prev]);
+      toast.success("Issue reported successfully!", { description: `ID: ${result.id}` });
+    } else {
+      toast.error("Failed to report issue");
+    }
   };
 
-  const handleEmergency = () => {
-    const issue: Issue = {
-      id: `EMG-${Date.now().toString(36).toUpperCase()}`,
+  const handleEmergency = async () => {
+    const emergencyIssue: Omit<Issue, 'id' | 'createdAt' | 'upvotes' | 'comments'> = {
       title: "Emergency reported at your location",
       description: "One-tap emergency report. Auto-detected location.",
       urgency: "High", status: "Pending", location: "Auto-detected: Your Area",
       category: "Disaster", images: [], reportedBy: "You", assignedNgo: null,
-      responseTime: null, createdAt: new Date().toISOString(), upvotes: 0,
-      comments: [], aiPriorityScore: 90, affectedPeople: 100,
+      responseTime: null, aiPriorityScore: 90, affectedPeople: 100,
       isAnonymous: false, isFake: false, coords: { x: 45, y: 50 },
       assignedVolunteers: [], photos: [],
     };
-    setIssueList((prev) => [issue, ...prev]);
-    toast.success("🚨 Emergency reported!", { description: "Help is on the way. Stay safe." });
+    
+    const result = await createIssue(emergencyIssue);
+    if (result) {
+      setIssueList((prev) => [result, ...prev]);
+      toast.success("🚨 Emergency reported!", { description: "Help is on the way. Stay safe." });
+    }
   };
 
-  const handleUpvote = (id: string) => {
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, upvotes: i.upvotes + 1 } : i));
-    if (selectedIssue?.id === id) setSelectedIssue((prev) => prev ? { ...prev, upvotes: prev.upvotes + 1 } : null);
+  const handleUpvote = async (id: string) => {
+    const success = await upvoteIssue(id);
+    if (success) {
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, upvotes: i.upvotes + 1 } : i));
+      if (selectedIssue?.id === id) setSelectedIssue((prev) => prev ? { ...prev, upvotes: prev.upvotes + 1 } : null);
+    }
   };
 
   const handleComment = (id: string, text: string) => {
@@ -128,6 +157,13 @@ export default function DashboardPublic() {
   };
 
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
     switch (section) {
       case "home":
         return (
@@ -147,7 +183,7 @@ export default function DashboardPublic() {
                 <Siren className="h-4 w-4 text-destructive animate-pulse" /> Live Regional Alerts
               </h2>
               <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                {alerts.map((a, i) => (
+                {alertList.map((a, i) => (
                   <motion.div 
                     key={a.id} 
                     initial={{ opacity: 0, x: 20 }}
@@ -238,7 +274,7 @@ export default function DashboardPublic() {
           <div className="space-y-4">
             <h2 className="text-base font-bold">Active Alerts & Notifications</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {alerts.map(a => (
+              {alertList.map(a => (
                 <div key={a.id} className="cursor-pointer" onClick={() => setSelectedAlert(a)}>
                   <AlertCard alert={a} />
                 </div>

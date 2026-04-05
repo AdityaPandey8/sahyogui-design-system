@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { issues as initialIssues, ngos, volunteers as initialVolunteers, alerts, type Issue, type NGO, type Volunteer, type Alert as AlertType } from "@/data/mockData";
+import { useState, useMemo, useEffect } from "react";
+import { type Issue, type NGO, type Volunteer, type Alert as AlertType } from "@/data/mockData";
+import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, claimIssue, updateIssueStatus } from "@/lib/supabase-service";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -30,11 +31,9 @@ import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock,
   Plus, ShieldAlert, Brain, Send, Megaphone, HandHelping,
   Trophy, UserCheck, Handshake, LayoutDashboard, FileText, Building2,
-  Bell, Eye, ShieldCheck, ShieldOff, X
+  Bell, Eye, ShieldCheck, ShieldOff, X, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-
-const currentNgo = ngos[0];
 
 type NgoSection = "overview" | "issues" | "volunteers" | "otherNgos" | "alerts" | "communication";
 
@@ -56,8 +55,11 @@ const ngoNotifications: Notification[] = [
 export default function DashboardNGO() {
   const [section, setSection] = useState<NgoSection>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
-  const [volList, setVolList] = useState<Volunteer[]>(initialVolunteers);
+  const [issueList, setIssueList] = useState<Issue[]>([]);
+  const [volList, setVolList] = useState<Volunteer[]>([]);
+  const [ngoList, setNgoList] = useState<NGO[]>([]);
+  const [alertList, setAlertList] = useState<AlertType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -72,6 +74,31 @@ export default function DashboardNGO() {
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [crisisMode, setCrisisMode] = useState(false);
 
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [issues, ngos, volunteers, alerts] = await Promise.all([
+          getIssues(),
+          getNGOs(),
+          getVolunteers(),
+          getAlerts()
+        ]);
+        setIssueList(issues);
+        setNgoList(ngos);
+        setVolList(volunteers);
+        setAlertList(alerts);
+      } catch (error) {
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const currentNgo = useMemo(() => ngoList[0] || null, [ngoList]);
+
   const [activities] = useState<Activity[]>([
     { id: "a1", action: "Claimed issue: Flooded road near Sector 14", time: "2h ago", type: "assigned" },
     { id: "a2", action: "Volunteer Priya assigned to medical supply task", time: "3h ago", type: "assigned" },
@@ -80,7 +107,11 @@ export default function DashboardNGO() {
     { id: "a5", action: "Status updated: Water supply — In Progress", time: "8h ago", type: "update" },
   ]);
 
-  const ngoIssues = useMemo(() => issueList.filter((i) => i.assignedNgo === currentNgo.id || i.assignedNgo === null), [issueList]);
+  const ngoIssues = useMemo(() => {
+    if (!currentNgo) return issueList;
+    return issueList.filter((i) => i.assignedNgo === currentNgo.id || i.assignedNgo === null);
+  }, [issueList, currentNgo]);
+
   const locations = useMemo(() => [...new Set(ngoIssues.map(i => i.location))], [ngoIssues]);
   const categories = useMemo(() => [...new Set(ngoIssues.map(i => i.category))], [ngoIssues]);
 
@@ -95,37 +126,58 @@ export default function DashboardNGO() {
     });
   }, [ngoIssues, search, urgencyFilter, statusFilter, locationFilter, categoryFilter]);
 
-  const stats = useMemo(() => ({
-    assigned: issueList.filter((i) => i.assignedNgo === currentNgo.id).length,
-    active: issueList.filter((i) => i.assignedNgo === currentNgo.id && i.status !== "Solved").length,
-    completed: issueList.filter((i) => i.assignedNgo === currentNgo.id && i.status === "Solved").length,
-    avgResponse: currentNgo.avgResponseTime,
-    activeVols: volList.filter((v) => v.available && !v.blocked).length,
-  }), [issueList, volList]);
+  const stats = useMemo(() => {
+    if (!currentNgo) return { assigned: 0, active: 0, completed: 0, avgResponse: "N/A", activeVols: 0 };
+    return {
+      assigned: issueList.filter((i) => i.assignedNgo === currentNgo.id).length,
+      active: issueList.filter((i) => i.assignedNgo === currentNgo.id && i.status !== "Solved").length,
+      completed: issueList.filter((i) => i.assignedNgo === currentNgo.id && i.status === "Solved").length,
+      avgResponse: currentNgo.avgResponseTime,
+      activeVols: volList.filter((v) => v.available && !v.blocked).length,
+    };
+  }, [issueList, volList, currentNgo]);
 
   const topIssue = useMemo(() => [...ngoIssues].sort((a, b) => b.aiPriorityScore - a.aiPriorityScore)[0], [ngoIssues]);
 
-  const handleClaim = (id: string) => {
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, assignedNgo: currentNgo.id, status: "Verified" as const } : i));
-    toast.success("Issue claimed by " + currentNgo.name);
+  const handleClaim = async (id: string) => {
+    if (!currentNgo) return;
+    const success = await claimIssue(id, currentNgo.id);
+    if (success) {
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, assignedNgo: currentNgo.id, status: "Verified" as const } : i));
+      toast.success("Issue claimed by " + currentNgo.name);
+    }
   };
-  const handleUnclaim = (id: string) => {
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, assignedNgo: null } : i));
-    toast("Issue unclaimed");
+
+  const handleUnclaim = async (id: string) => {
+    const success = await claimIssue(id, null); // null means unclaim
+    if (success) {
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, assignedNgo: null } : i));
+      toast("Issue unclaimed");
+    }
   };
-  const handleStatusUpdate = (id: string, status: Issue["status"]) => {
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status } : i));
-    toast.success(`Status updated to ${status}`);
+
+  const handleStatusUpdate = async (id: string, status: Issue["status"]) => {
+    const success = await updateIssueStatus(id, status);
+    if (success) {
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status } : i));
+      toast.success(`Status updated to ${status}`);
+    }
   };
-  const handleNewIssue = (issue: Issue) => {
-    setIssueList((prev) => [{ ...issue, assignedNgo: currentNgo.id }, ...prev]);
-    toast.success("Issue reported");
+
+  const handleNewIssue = async (issueData: Issue) => {
+    const result = await createIssue(issueData);
+    if (result) {
+      setIssueList((prev) => [{ ...result, assignedNgo: currentNgo?.id || null }, ...prev]);
+      toast.success("Issue reported");
+    }
   };
+
   const handleBlockVol = (id: string) => {
     setVolList(prev => prev.map(v => v.id === id ? { ...v, blocked: !v.blocked } : v));
     const vol = volList.find(v => v.id === id);
     toast.success(`${vol?.name} ${vol?.blocked ? "unblocked" : "blocked"}`);
   };
+
   const handleBroadcast = () => {
     if (!broadcastMsg.trim()) return;
     toast.success("📢 Message sent to all volunteers", { description: broadcastMsg });
@@ -142,6 +194,14 @@ export default function DashboardNGO() {
   );
 
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+    
     switch (section) {
       case "overview":
         return (
@@ -224,13 +284,13 @@ export default function DashboardNGO() {
                             <HandHelping className="h-3.5 w-3.5 mr-1.5" />Claim
                           </Button>
                         )}
-                        {issue.assignedNgo === currentNgo.id && (
+                        {currentNgo && issue.assignedNgo === currentNgo.id && (
                           <Button size="sm" variant="ghost" className="rounded-xl font-bold text-destructive hover:bg-destructive/10 transition-all" onClick={() => handleUnclaim(issue.id)}>
                             <X className="h-3.5 w-3.5 mr-1.5" />Release
                           </Button>
                         )}
                         <Button size="sm" variant="outline" className="rounded-xl font-bold active:scale-95" onClick={() => setSelectedIssue(issue)}>Details</Button>
-                        {issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
+                        {currentNgo && issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
                           <Button size="sm" variant="outline" className="rounded-xl font-bold active:scale-95" onClick={() => setAssignIssue(issue)}>
                             <Users className="h-3.5 w-3.5 mr-1.5" />Assign
                           </Button>
@@ -238,7 +298,7 @@ export default function DashboardNGO() {
                       </div>
                     </div>
 
-                    {issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
+                    {currentNgo && issue.assignedNgo === currentNgo.id && issue.status !== "Solved" && (
                       <div className="mt-4 pt-3 border-t border-dashed flex gap-1.5 flex-wrap">
                         {(["Verified", "In Progress", "Solved"] as Issue["status"][]).map((s) => (
                           <Button 
@@ -323,7 +383,7 @@ export default function DashboardNGO() {
           <div className="space-y-6">
             <h2 className="text-base font-bold flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> Other NGOs</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {ngos.filter(n => n.id !== currentNgo.id).map(ngo => (
+              {ngoList.filter(n => n.id !== (currentNgo?.id || '')).map(ngo => (
                 <div key={ngo.id} className="rounded-xl border bg-card p-5 transition-all hover:shadow-md">
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -356,7 +416,7 @@ export default function DashboardNGO() {
           <div className="space-y-6">
             <h2 className="text-base font-bold flex items-center gap-2"><Bell className="h-4 w-4 text-warning" /> Alerts & Notifications</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {alerts.map(a => (
+              {alertList.map(a => (
                 <div key={a.id} className="cursor-pointer" onClick={() => setSelectedAlert(a)}>
                   <AlertCard alert={a} />
                 </div>
@@ -378,15 +438,17 @@ export default function DashboardNGO() {
             </div>
 
             {/* Analytics */}
-            <div>
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Trophy className="h-3.5 w-3.5 text-warning" /> Performance Analytics</h3>
-              <div className="grid gap-3 sm:grid-cols-4">
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums">{currentNgo.issuesHandled}</p><p className="text-xs text-muted-foreground">Issues Handled</p></div>
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums text-success">{currentNgo.successRate}%</p><p className="text-xs text-muted-foreground">Success Rate</p></div>
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-xl font-bold">{currentNgo.avgResponseTime}</p><p className="text-xs text-muted-foreground">Avg Response</p></div>
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums text-primary">4,200</p><p className="text-xs text-muted-foreground">Lives Impacted</p></div>
+            {currentNgo && (
+              <div>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Trophy className="h-3.5 w-3.5 text-warning" /> Performance Analytics</h3>
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums">{currentNgo.issuesHandled}</p><p className="text-xs text-muted-foreground">Issues Handled</p></div>
+                  <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums text-success">{currentNgo.successRate}%</p><p className="text-xs text-muted-foreground">Success Rate</p></div>
+                  <div className="rounded-xl border bg-card p-5 text-center"><p className="text-xl font-bold">{currentNgo.avgResponseTime}</p><p className="text-xs text-muted-foreground">Avg Response</p></div>
+                  <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums text-primary">4,200</p><p className="text-xs text-muted-foreground">Lives Impacted</p></div>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Activity Log */}
             <div>
@@ -400,7 +462,7 @@ export default function DashboardNGO() {
 
   return (
     <DashboardShell
-      panelLabel={currentNgo.name}
+      panelLabel={currentNgo?.name || "NGO Dashboard"}
       sidebarItems={sidebarItems}
       activeSection={section}
       onSectionChange={(s) => setSection(s as NgoSection)}

@@ -4,10 +4,18 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, PanelLeftClose, PanelLeft, LogOut, Settings } from "lucide-react";
+import { ArrowLeft, PanelLeftClose, PanelLeft, LogOut, Settings, Languages } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SidebarItem<T extends string> {
   id: T;
@@ -40,7 +48,15 @@ export function DashboardShell<T extends string>({
   headerExtra,
   children,
 }: DashboardShellProps<T>) {
-  const currentLabel = sidebarItems.find((s) => s.id === activeSection)?.label ?? panelLabel;
+  const { t, i18n } = useTranslation();
+
+  // Use translation for sidebar items if key exists, otherwise use label
+  const translatedSidebarItems = sidebarItems.map((item) => ({
+    ...item,
+    displayLabel: t(item.id, item.label),
+  }));
+
+  const currentLabel = translatedSidebarItems.find((s) => s.id === activeSection)?.displayLabel ?? panelLabel;
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -78,7 +94,7 @@ export function DashboardShell<T extends string>({
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20 shrink-0">
                   S
                 </div>
-                <span className="text-sm font-bold truncate tracking-tight text-foreground">{panelLabel}</span>
+                <span className="text-sm font-bold truncate tracking-tight text-foreground">{t('app_name', panelLabel)}</span>
               </motion.div>
             ) : (
               <motion.div
@@ -97,7 +113,7 @@ export function DashboardShell<T extends string>({
         </div>
 
         <nav className="flex-1 py-6 space-y-1.5 px-3 overflow-y-auto">
-          {sidebarItems.map((item) => (
+          {translatedSidebarItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleSectionClick(item.id)}
@@ -117,7 +133,7 @@ export function DashboardShell<T extends string>({
                     exit={{ opacity: 0, x: -10 }}
                     className="truncate font-medium"
                   >
-                    {item.label}
+                    {item.displayLabel}
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -191,6 +207,21 @@ export function DashboardShell<T extends string>({
               {headerExtra}
             </div>
             <div className="flex items-center gap-3">
+              <Select
+                value={i18n.language}
+                onValueChange={(lang) => i18n.changeLanguage(lang)}
+              >
+                <SelectTrigger className="w-[110px] h-9 rounded-xl bg-muted/50 border-none focus:ring-1 ring-primary/20">
+                  <Languages className="h-4 w-4 mr-2 text-primary" />
+                  <SelectValue placeholder="Lang" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-border/50 backdrop-blur-xl">
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="hi">हिंदी (Hindi)</SelectItem>
+                  <SelectItem value="mr">मराठी (Marathi)</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="h-6 w-px bg-border/50 mx-1" />
               <NotificationBell notifications={notifications} />
               <div className="h-6 w-px bg-border/50 mx-1" />
               <ThemeToggle />

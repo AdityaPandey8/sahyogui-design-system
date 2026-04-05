@@ -7,10 +7,12 @@ export async function streamChat({
   messages,
   onDelta,
   onDone,
+  language = "en"
 }: {
   messages: Msg[];
   onDelta: (deltaText: string) => void;
   onDone: () => void;
+  language?: string;
 }) {
   try {
     const resp = await fetch(CHAT_URL, {
@@ -19,7 +21,7 @@ export async function streamChat({
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, language }),
     });
 
     if (resp.status === 429) throw new Error("Rate limit exceeded. Please try again later.");
@@ -92,6 +94,7 @@ export async function analyzeIssue(data: {
   title: string;
   description: string;
   category: string;
+  language?: string;
 }): Promise<{ priority: number; suggestedCategory: string; responderType: string; summary: string }> {
   try {
     const resp = await fetch(ANALYZE_URL, {

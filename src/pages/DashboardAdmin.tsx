@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { issues as initialIssues, ngos as initialNgos, volunteers as initialVolunteers, alerts, pastCrises, type Issue, type NGO, type Volunteer } from "@/data/mockData";
+import { useState, useMemo, useEffect } from "react";
+import { type Issue, type NGO, type Volunteer, type PastCrisis, type Alert as AlertType } from "@/data/mockData";
+import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, updateIssueStatus, updateVolunteerStatus } from "@/lib/supabase-service";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -29,10 +30,10 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock, Plus, Megaphone,
   ShieldAlert, Brain, Send, Flag, Activity, LayoutDashboard, FileText,
-  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles
+  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import type { PastCrisis, Alert as AlertType } from "@/data/mockData";
+import { pastCrises as mockPastCrises } from "@/data/mockData";
 
 type AdminSection = "overview" | "issues" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
 
@@ -56,9 +57,11 @@ const adminNotifications: Notification[] = [
 export default function DashboardAdmin() {
   const [section, setSection] = useState<AdminSection>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
-  const [ngoList, setNgoList] = useState<NGO[]>(initialNgos);
-  const [volList, setVolList] = useState<Volunteer[]>(initialVolunteers);
+  const [issueList, setIssueList] = useState<Issue[]>([]);
+  const [ngoList, setNgoList] = useState<NGO[]>([]);
+  const [volList, setVolList] = useState<Volunteer[]>([]);
+  const [alertList, setAlertList] = useState<AlertType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -73,6 +76,29 @@ export default function DashboardAdmin() {
   const [assignIssue, setAssignIssue] = useState<Issue | null>(null);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [crisisMode, setCrisisMode] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [issues, ngos, volunteers, alerts] = await Promise.all([
+          getIssues(),
+          getNGOs(),
+          getVolunteers(),
+          getAlerts()
+        ]);
+        setIssueList(issues);
+        setNgoList(ngos);
+        setVolList(volunteers);
+        setAlertList(alerts);
+      } catch (error) {
+        toast.error("Failed to load admin dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const locations = useMemo(() => [...new Set(issueList.map(i => i.location))], [issueList]);
   const categories = useMemo(() => [...new Set(issueList.map(i => i.category))], [issueList]);
@@ -100,9 +126,12 @@ export default function DashboardAdmin() {
   const pendingIssues = useMemo(() => issueList.filter((i) => i.status === "Pending"), [issueList]);
   const prioritySorted = useMemo(() => [...filtered].sort((a, b) => b.aiPriorityScore - a.aiPriorityScore), [filtered]);
 
-  const handleVerify = (id: string) => {
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status: "Verified" as const } : i));
-    toast.success("Issue verified");
+  const handleVerify = async (id: string) => {
+    const success = await updateIssueStatus(id, "Verified");
+    if (success) {
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status: "Verified" as const } : i));
+      toast.success("Issue verified");
+    }
   };
   const handleReject = (id: string) => {
     setIssueList((prev) => prev.filter((i) => i.id !== id));
@@ -113,23 +142,33 @@ export default function DashboardAdmin() {
     setSelectedIssue(null);
     toast.success("Issue deleted");
   };
-  const handleEscalate = (id: string) => {
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, urgency: "High" as const, aiPriorityScore: Math.min(i.aiPriorityScore + 15, 100) } : i));
-    toast.warning("Issue escalated");
+  const handleEscalate = async (id: string) => {
+    const success = await updateIssueStatus(id, "In Progress"); // Escalate means putting it in action
+    if (success) {
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, urgency: "High" as const, aiPriorityScore: Math.min(i.aiPriorityScore + 15, 100) } : i));
+      toast.warning("Issue escalated");
+    }
   };
-  const handleNewIssue = (issue: Issue) => {
-    setIssueList((prev) => [issue, ...prev]);
-    toast.success("Issue added");
+  const handleNewIssue = async (issueData: Issue) => {
+    const result = await createIssue(issueData);
+    if (result) {
+      setIssueList((prev) => [result, ...prev]);
+      toast.success("Issue added");
+    }
   };
   const handleBlockNgo = (id: string) => {
     setNgoList(prev => prev.map(n => n.id === id ? { ...n, blocked: !n.blocked } : n));
     const ngo = ngoList.find(n => n.id === id);
     toast.success(`${ngo?.name} ${ngo?.blocked ? "unblocked" : "blocked"}`);
   };
-  const handleBlockVol = (id: string) => {
-    setVolList(prev => prev.map(v => v.id === id ? { ...v, blocked: !v.blocked } : v));
+  const handleBlockVol = async (id: string) => {
     const vol = volList.find(v => v.id === id);
-    toast.success(`${vol?.name} ${vol?.blocked ? "unblocked" : "blocked"}`);
+    if (!vol) return;
+    const success = await updateVolunteerStatus(id, !vol.blocked);
+    if (success) {
+      setVolList(prev => prev.map(v => v.id === id ? { ...v, blocked: !v.blocked } : v));
+      toast.success(`${vol.name} ${vol.blocked ? "unblocked" : "blocked"}`);
+    }
   };
   const handleBroadcast = () => {
     if (!broadcastMsg.trim()) return;
@@ -138,6 +177,14 @@ export default function DashboardAdmin() {
   };
 
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
     switch (section) {
       case "overview":
         return (
@@ -400,7 +447,7 @@ export default function DashboardAdmin() {
           <div className="space-y-6">
             <h2 className="text-base font-bold flex items-center gap-2"><Bell className="h-4 w-4 text-warning" /> Active Alerts</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {alerts.map(a => (
+              {alertList.map(a => (
                 <div key={a.id} className="cursor-pointer" onClick={() => setSelectedAlert(a)}>
                   <AlertCard alert={a} />
                 </div>
@@ -414,14 +461,14 @@ export default function DashboardAdmin() {
           <div className="space-y-6">
             <h2 className="text-base font-bold flex items-center gap-2"><History className="h-4 w-4 text-primary" /> Past Crises</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {pastCrises.map(crisis => {
-                const ngo = initialNgos.find(n => n.id === crisis.resolvedByNgo);
+              {mockPastCrises.map(crisis => {
+                const ngo = ngoList.find(n => n.id === crisis.resolvedByNgo);
                 return (
                   <div key={crisis.id} className="rounded-xl border bg-card p-5 transition-all hover:shadow-md cursor-pointer" onClick={() => setSelectedCrisis(crisis)}>
                     <h3 className="text-sm font-semibold mb-1">{crisis.title}</h3>
                     <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{crisis.description}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{ngo?.name}</span>
+                      <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{ngo?.name || "Unknown NGO"}</span>
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{crisis.responseTime}</span>
                       <span className="flex items-center gap-1"><Users className="h-3 w-3" />{crisis.livesImpacted.toLocaleString()} lives</span>
                       <span className="flex items-center gap-1"><Flag className="h-3 w-3" />{crisis.category}</span>

@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { issues as initialIssues, ngos, volunteers, alerts, type Issue, type Alert } from "@/data/mockData";
+import { useState, useMemo, useEffect } from "react";
+import { type Issue, type Alert, type NGO, type Volunteer } from "@/data/mockData";
+import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, updateIssueStatus, toggleVolunteerAvailability } from "@/lib/supabase-service";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MapDashboard } from "@/components/dashboard/MapDashboard";
 import { getLatLng } from "@/lib/map-utils";
@@ -27,13 +28,11 @@ import {
   CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
   LayoutDashboard, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
-  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren
+  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calcPriorityScore } from "@/lib/ai-insights";
-
-const currentVol = volunteers[0];
 
 const volNotifications: Notification[] = [
   { id: "n1", title: "New Task Assigned", message: "Food shortage relief task near you.", type: "warning", time: "3m ago", read: false },
@@ -64,10 +63,18 @@ interface Message {
   fromVolunteer: boolean;
 }
 
+interface IssueWithDistance extends Issue {
+  distance: number;
+}
+
 export default function DashboardVolunteer() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("overview");
-  const [issueList, setIssueList] = useState<Issue[]>(initialIssues);
+  const [issueList, setIssueList] = useState<Issue[]>([]);
+  const [volList, setVolList] = useState<Volunteer[]>([]);
+  const [ngoList, setNgoList] = useState<NGO[]>([]);
+  const [alertList, setAlertList] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -79,8 +86,40 @@ export default function DashboardVolunteer() {
   const [acceptedTasks, setAcceptedTasks] = useState<string[]>([]);
   const [completedTasks, setCompletedTasks] = useState<string[]>(["ISS-007", "ISS-010"]);
   const [reportOpen, setReportOpen] = useState(false);
-  const [skills, setSkills] = useState<string[]>(currentVol.skills);
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [issues, ngos, volunteers, alerts] = await Promise.all([
+          getIssues(),
+          getNGOs(),
+          getVolunteers(),
+          getAlerts()
+        ]);
+        setIssueList(issues);
+        setNgoList(ngos);
+        setVolList(volunteers);
+        setAlertList(alerts);
+      } catch (error) {
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const currentVol = useMemo(() => volList[0] || null, [volList]);
+  const [skills, setSkills] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (currentVol) {
+      setSkills(currentVol.skills);
+      setAvailability(currentVol.available ? "Available" : "Offline");
+    }
+  }, [currentVol]);
 
   const [messages, setMessages] = useState<Message[]>([
     { id: "m1", ngoId: "NGO-001", ngoName: "HelpBridge Foundation", text: "Please bring extra water supplies to Camp B. Thank you for your efforts!", time: "2h ago", fromVolunteer: false },
@@ -100,11 +139,12 @@ export default function DashboardVolunteer() {
 
   const locations = useMemo(() => [...new Set(issueList.map(i => i.location))], [issueList]);
 
-  const nearbyIssues = useMemo(() => {
+  const nearbyIssues = useMemo((): IssueWithDistance[] => {
+    if (!currentVol) return [];
     return issueList.filter((i) => i.status !== "Solved")
       .map((i) => ({ ...i, distance: (Math.abs(i.coords.x - currentVol.coords.x) + Math.abs(i.coords.y - currentVol.coords.y)) * 0.15 }))
       .sort((a, b) => a.distance - b.distance);
-  }, [issueList]);
+  }, [issueList, currentVol]);
 
   const filtered = useMemo(() => {
     return nearbyIssues.filter((i) => {
@@ -117,48 +157,61 @@ export default function DashboardVolunteer() {
   }, [nearbyIssues, search, urgencyFilter, locationFilter, categoryFilter]);
 
   const bestMatch = useMemo(() => {
+    if (!currentVol) return null;
     const skillKeywords: Record<string, string[]> = {
       "First Aid": ["Health", "Disaster"], "Medical": ["Health"],
       "Logistics": ["Food", "Shelter", "Infrastructure"], "Driving": ["Food", "Shelter"],
       "Construction": ["Infrastructure", "Shelter"],
     };
     return nearbyIssues.find((i) => skills.some((s) => skillKeywords[s]?.includes(i.category))) || nearbyIssues[0];
-  }, [nearbyIssues, skills]);
+  }, [nearbyIssues, skills, currentVol]);
 
   const matchReason = useMemo(() => {
-    if (!bestMatch) return "";
+    if (!bestMatch || !currentVol) return "";
     const skillKeywords: Record<string, string[]> = {
       "First Aid": ["Health", "Disaster"], "Medical": ["Health"],
       "Logistics": ["Food", "Shelter", "Infrastructure"],
     };
     const matched = skills.find((s) => skillKeywords[s]?.includes(bestMatch.category));
     return matched ? `Your ${matched} skill matches this ${bestMatch.category} emergency` : "Nearest issue to your location";
-  }, [bestMatch, skills]);
+  }, [bestMatch, skills, currentVol]);
 
   const matchScore = useMemo(() => {
-    if (!bestMatch) return 0;
+    if (!bestMatch || !currentVol) return 0;
     const base = skills.some(s => ["First Aid", "Medical"].includes(s) && ["Health", "Disaster"].includes(bestMatch.category)) ? 92 : 78;
     return Math.min(100, base + Math.floor(Math.random() * 8));
-  }, [bestMatch, skills]);
+  }, [bestMatch, skills, currentVol]);
 
   const myTasks = useMemo(() => issueList.filter((i) => acceptedTasks.includes(i.id)), [issueList, acceptedTasks]);
-  const stats = useMemo(() => ({
-    assigned: acceptedTasks.length, completed: completedTasks.length,
-    active: acceptedTasks.filter((id) => !completedTasks.includes(id)).length,
-    reliability: currentVol.reliabilityScore, badges: 3,
-  }), [acceptedTasks, completedTasks]);
+  const stats = useMemo(() => {
+    if (!currentVol) return { assigned: 0, completed: 0, active: 0, reliability: 0, badges: 0 };
+    return {
+      assigned: acceptedTasks.length, completed: completedTasks.length,
+      active: acceptedTasks.filter((id) => !completedTasks.includes(id)).length,
+      reliability: currentVol.reliabilityScore, badges: 3,
+    };
+  }, [acceptedTasks, completedTasks, currentVol]);
 
-  const connectedNgos = useMemo(() => ngos.filter(n => n.volunteerIds.includes(currentVol.id)), []);
+  const connectedNgos = useMemo(() => {
+    if (!currentVol) return [];
+    return ngoList.filter(n => n.volunteerIds.includes(currentVol.id));
+  }, [ngoList, currentVol]);
 
-  const handleAccept = (id: string) => {
-    setAcceptedTasks((prev) => [...prev, id]);
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status: "In Progress" as const } : i));
-    toast.success("Task accepted!");
+  const handleAccept = async (id: string) => {
+    const success = await updateIssueStatus(id, "In Progress");
+    if (success) {
+      setAcceptedTasks((prev) => [...prev, id]);
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status: "In Progress" as const } : i));
+      toast.success("Task accepted!");
+    }
   };
-  const handleComplete = (id: string) => {
-    setCompletedTasks((prev) => [...prev, id]);
-    setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status: "Solved" as const } : i));
-    toast.success("Task marked complete! 🎉");
+  const handleComplete = async (id: string) => {
+    const success = await updateIssueStatus(id, "Solved");
+    if (success) {
+      setCompletedTasks((prev) => [...prev, id]);
+      setIssueList((prev) => prev.map((i) => i.id === id ? { ...i, status: "Solved" as const } : i));
+      toast.success("Task marked complete! 🎉");
+    }
   };
   const handleDeleteReport = (id: string) => {
     setIssueList((prev) => prev.filter((i) => i.id !== id));
@@ -170,9 +223,12 @@ export default function DashboardVolunteer() {
     if (urgent) { handleAccept(urgent.id); toast.success("🚨 Joined emergency: " + urgent.title); }
     else { toast.info("No nearby emergencies right now"); }
   };
-  const handleNewIssue = (issue: Issue) => {
-    setIssueList((prev) => [issue, ...prev]);
-    toast.success("Issue reported");
+  const handleNewIssue = async (issueData: Issue) => {
+    const result = await createIssue(issueData);
+    if (result) {
+      setIssueList((prev) => [result, ...prev]);
+      toast.success("Issue reported");
+    }
   };
   const handleReply = (ngoId: string, ngoName: string) => {
     const text = replyTexts[ngoId];
@@ -189,9 +245,27 @@ export default function DashboardVolunteer() {
     toast.info(`Removed: ${skill}`);
   };
 
-  const selectedNgo = selectedNgoId ? ngos.find(n => n.id === selectedNgoId) || null : null;
+  const handleAvailabilityChange = async (newStatus: "Available" | "Busy" | "Offline") => {
+    if (!currentVol) return;
+    const isAvailable = newStatus === "Available";
+    const success = await toggleVolunteerAvailability(currentVol.id, isAvailable);
+    if (success) {
+      setAvailability(newStatus);
+      toast.success(`Status updated to ${newStatus}`);
+    }
+  };
+
+  const selectedNgo = selectedNgoId ? ngoList.find(n => n.id === selectedNgoId) || null : null;
 
   const renderContent = () => {
+    if (isLoading || !currentVol) {
+      return (
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
     switch (section) {
       case "overview":
         return (
@@ -322,7 +396,7 @@ export default function DashboardVolunteer() {
               <AnimatePresence>
                 {myTasks.map((task) => {
                   const isComplete = completedTasks.includes(task.id);
-                  const ngo = ngos.find((n) => n.id === task.assignedNgo);
+                  const ngo = ngoList.find((n) => n.id === task.assignedNgo);
                   const isSelfReported = task.reportedBy === "You" || task.reportedBy === currentVol.name;
                   return (
                     <motion.div 
@@ -385,7 +459,7 @@ export default function DashboardVolunteer() {
             <FilterBar search={search} onSearchChange={setSearch} filters={[
               { label: "Urgency", value: urgencyFilter, onChange: setUrgencyFilter, options: [{ value: "High", label: "High" }, { value: "Medium", label: "Medium" }, { value: "Low", label: "Low" }] },
               { label: "Location", value: locationFilter, onChange: setLocationFilter, options: locations.map(l => ({ value: l, label: l.split(",")[0] })) },
-              { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: [{ value: "Health", label: "Health" }, { value: "Disaster", label: "Disaster" }, { value: "Food", label: "Food" }, { value: "Infrastructure", label: "Infra" }, { value: "Environment", label: "Environment" }, { value: "Safety", label: "Safety" }] },
+              { label: "Category", value: categoryFilter, onChange: setCategoryFilter, options: [{ value: "Health", label: "Health" }, { value: "Disaster", label: "Disaster" }, { value: "Food", label: "Food" }, { value: "Infrastructure", label: "Infrastructure" }, { value: "Environment", label: "Environment" }, { value: "Safety", label: "Safety" }] },
             ]} />
             <div className="grid gap-3 sm:grid-cols-2">
               {filtered.slice(0, 12).map((issue) => {
@@ -495,7 +569,7 @@ export default function DashboardVolunteer() {
                 <div>
                   <h2 className="text-lg font-bold">{currentVol.name}</h2>
                   <p className="text-xs text-muted-foreground">{currentVol.location} • {currentVol.phone}</p>
-                  <AvailabilityToggle status={availability} onChange={setAvailability} />
+                  <AvailabilityToggle status={availability} onChange={handleAvailabilityChange} />
                 </div>
               </div>
             </div>
