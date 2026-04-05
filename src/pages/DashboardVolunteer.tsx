@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { issues as initialIssues, ngos, volunteers, alerts, type Issue, type Alert } from "@/data/mockData";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MapDashboard } from "@/components/dashboard/MapDashboard";
+import { getLatLng } from "@/lib/map-utils";
 import { FilterBar } from "@/components/dashboard/FilterBar";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
@@ -390,7 +391,7 @@ export default function DashboardVolunteer() {
             <MapDashboard
               userRole="volunteer"
               issues={issueList}
-              userLocation={currentVol.location}
+              userLocation={getLatLng(currentVol.coords)}
               onIssueClick={setSelectedIssue}
             />
           </div>

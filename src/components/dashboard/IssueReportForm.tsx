@@ -21,6 +21,7 @@ interface IssueReportFormProps {
 }
 
 const categories: Category[] = ["Health", "Disaster", "Food", "Infrastructure", "Environment", "Safety", "Communication", "Shelter"];
+const steps = ["Analyzing keywords...", "Categorizing incident...", "Calculating priority...", "Finalizing insights..."];
 
 export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: IssueReportFormProps) {
   const [title, setTitle] = useState(prefill?.title || "");
@@ -32,8 +33,6 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [aiResult, setAiResult] = useState<{ priority: number; suggestedCategory: string; responderType: string; summary: string } | null>(null);
-
-  const steps = ["Analyzing keywords...", "Categorizing incident...", "Calculating priority...", "Finalizing insights..."];
 
   useEffect(() => {
     let timer: NodeJS.Timeout;

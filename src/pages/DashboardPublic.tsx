@@ -254,7 +254,7 @@ export default function DashboardPublic() {
               userRole="public"
               issues={issueList}
               onIssueClick={setSelectedIssue}
-              onReportIssue={() => setActiveSection("report")}
+              onReportIssue={() => setReportOpen(true)}
             />
           </div>
         );
