@@ -46,10 +46,15 @@ Deno.serve(async (req) => {
       if (!response.ok) {
         const errText = await response.text();
         console.error("Gemini error:", response.status, errText);
-        return new Response(JSON.stringify({ error: `Gemini API error: ${response.status}`, details: errText }), {
-          status: response.status === 429 ? 429 : 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Fall through to Lovable Gateway on error instead of returning error
+        if (LOVABLE_KEY) {
+          console.log("Gemini failed, falling back to Lovable Gateway...");
+        } else {
+          return new Response(JSON.stringify({ error: `Gemini API error: ${response.status}`, details: errText }), {
+            status: response.status === 429 ? 429 : 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       const { readable, writable } = new TransformStream();
