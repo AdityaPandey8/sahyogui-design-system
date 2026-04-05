@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       ];
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?alt=sse&key=${GOOGLE_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GOOGLE_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
