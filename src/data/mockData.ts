@@ -16,6 +16,7 @@ export interface Issue {
   title: string;
   description: string;
   urgency: Urgency;
+  severity?: Urgency;
   status: IssueStatus;
   location: string;
   category: Category;
@@ -33,6 +34,7 @@ export interface Issue {
   isFake: boolean;
   coords: { x: number; y: number };
   photos: string[];
+  locationRisk?: number;
 }
 
 export interface NGO {
