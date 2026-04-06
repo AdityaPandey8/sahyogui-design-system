@@ -404,7 +404,7 @@ export default function DashboardPublic() {
         sidebarOpen={sidebarOpen}
         onSidebarToggle={() => setSidebarOpen(p => !p)}
         notifications={publicNotifications}
-        autoToast={{ message: "🔴 Flood warning in your area", description: "Heavy rainfall expected in Bihar and Jharkhand", delay: 3000 }}
+        
       >
         {renderContent()}
       </DashboardShell>

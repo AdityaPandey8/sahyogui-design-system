@@ -9,6 +9,7 @@ import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AIPriorityCard } from "@/components/dashboard/AIPriorityCard";
 import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
 import { QuickActionBar } from "@/components/dashboard/QuickActionBar";
+import { AIAnalyticsCharts } from "@/components/dashboard/AIAnalyticsCharts";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
@@ -33,11 +34,12 @@ import {
 import { toast } from "sonner";
 import type { PastCrisis, Alert as AlertType } from "@/data/mockData";
 
-type AdminSection = "overview" | "issues" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
+type AdminSection = "overview" | "issues" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
 
 const sidebarItems: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "issues", label: "Issues", icon: FileText },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "ngos", label: "NGOs", icon: Building2 },
   { id: "volunteers", label: "Volunteers", icon: Users },
   { id: "alerts", label: "Alerts", icon: Bell },
@@ -271,6 +273,16 @@ export default function DashboardAdmin() {
         );
 
 
+      case "analytics":
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+              <BarChart3 className="h-5 w-5 text-primary" /> AI Analytics Dashboard
+            </h2>
+            <AIAnalyticsCharts />
+          </motion.div>
+        );
+
       case "ngos":
         return (
           <div className="space-y-6">
@@ -466,7 +478,7 @@ export default function DashboardAdmin() {
       sidebarOpen={sidebarOpen}
       onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
       notifications={adminNotifications}
-      autoToast={{ message: "⚠️ Issue pending verification", description: "3 new issues need your review", delay: 4000 }}
+      
       crisisMode={crisisMode}
     >
       {renderContent()}

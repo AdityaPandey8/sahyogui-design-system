@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,7 +16,6 @@ export interface Notification {
 
 interface NotificationBellProps {
   notifications: Notification[];
-  autoToast?: { message: string; description: string; delay?: number };
 }
 
 const typeStyle: Record<string, string> = {
@@ -26,18 +25,9 @@ const typeStyle: Record<string, string> = {
   success: "bg-success/10 text-success",
 };
 
-export function NotificationBell({ notifications: initialNotifs, autoToast }: NotificationBellProps) {
+export function NotificationBell({ notifications: initialNotifs }: NotificationBellProps) {
   const [notifications, setNotifications] = useState(initialNotifs);
   const unread = notifications.filter(n => !n.read).length;
-
-  useEffect(() => {
-    if (autoToast) {
-      const timer = setTimeout(() => {
-        toast(autoToast.message, { description: autoToast.description });
-      }, autoToast.delay || 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [autoToast]);
 
   const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
