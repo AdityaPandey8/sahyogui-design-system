@@ -1,11 +1,13 @@
 import { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, PanelLeftClose, PanelLeft, LogOut, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SidebarItem<T extends string> {
   id: T;
@@ -21,7 +23,6 @@ interface DashboardShellProps<T extends string> {
   sidebarOpen: boolean;
   onSidebarToggle: () => void;
   notifications?: Notification[];
-  autoToast?: { message: string; description: string; delay?: number };
   crisisMode?: boolean;
   headerExtra?: ReactNode;
   children: ReactNode;
@@ -35,12 +36,25 @@ export function DashboardShell<T extends string>({
   sidebarOpen,
   onSidebarToggle,
   notifications = [],
-  autoToast,
   crisisMode,
   headerExtra,
   children,
 }: DashboardShellProps<T>) {
   const currentLabel = sidebarItems.find((s) => s.id === activeSection)?.label ?? panelLabel;
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("Signed out");
+    navigate("/auth");
+  };
+
+  const handleSectionClick = (id: T) => {
+    onSectionChange(id);
+    if (sidebarOpen) {
+      onSidebarToggle();
+    }
+  };
 
   return (
     <div className={cn("min-h-screen bg-background flex", crisisMode && "ring-2 ring-destructive ring-inset")}>
@@ -86,7 +100,7 @@ export function DashboardShell<T extends string>({
           {sidebarItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => handleSectionClick(item.id)}
               className={cn(
                 "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-300",
                 activeSection === item.id
@@ -133,7 +147,7 @@ export function DashboardShell<T extends string>({
               </div>
             )}
             {sidebarOpen && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" />
               </Button>
             )}
@@ -143,7 +157,7 @@ export function DashboardShell<T extends string>({
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-muted-foreground">
                 <Settings className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -177,7 +191,7 @@ export function DashboardShell<T extends string>({
               {headerExtra}
             </div>
             <div className="flex items-center gap-3">
-              <NotificationBell notifications={notifications} autoToast={autoToast} />
+              <NotificationBell notifications={notifications} />
               <div className="h-6 w-px bg-border/50 mx-1" />
               <ThemeToggle />
             </div>
