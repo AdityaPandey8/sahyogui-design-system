@@ -45,7 +45,7 @@ export function RoleSelectionDialog({ open, onOpenChange }: RoleSelectionDialogP
                 key={role.key}
                 onClick={() => {
                   onOpenChange(false);
-                  navigate(`/dashboard/${role.key}`);
+                  navigate(`/auth?role=${role.key}`);
                 }}
                 className="group rounded-2xl sm:rounded-3xl border border-border bg-background p-4 sm:p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >

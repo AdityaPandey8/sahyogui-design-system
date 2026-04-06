@@ -4,7 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import DashboardNGO from "./pages/DashboardNGO";
 import DashboardVolunteer from "./pages/DashboardVolunteer";
@@ -24,18 +27,21 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard/admin" element={<DashboardAdmin />} />
-            <Route path="/dashboard/ngo" element={<DashboardNGO />} />
-            <Route path="/dashboard/volunteer" element={<DashboardVolunteer />} />
-            <Route path="/dashboard/public" element={<DashboardPublic />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/data-protection" element={<DataProtection />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard/admin" element={<ProtectedRoute requiredRole="admin"><DashboardAdmin /></ProtectedRoute>} />
+              <Route path="/dashboard/ngo" element={<ProtectedRoute requiredRole="ngo"><DashboardNGO /></ProtectedRoute>} />
+              <Route path="/dashboard/volunteer" element={<ProtectedRoute requiredRole="volunteer"><DashboardVolunteer /></ProtectedRoute>} />
+              <Route path="/dashboard/public" element={<ProtectedRoute requiredRole="public"><DashboardPublic /></ProtectedRoute>} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/data-protection" element={<DataProtection />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
