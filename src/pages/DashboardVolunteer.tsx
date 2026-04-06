@@ -18,6 +18,8 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
 import { NetworkStatusWidget } from "@/components/dashboard/NetworkStatusWidget";
+import { TaskMarketplace } from "@/components/dashboard/TaskMarketplace";
+import { SafetyGuides } from "@/components/dashboard/SafetyGuides";
 import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
@@ -27,7 +29,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
-  LayoutDashboard, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
+  LayoutDashboard, ClipboardList, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
   Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,10 +44,11 @@ const volNotifications: Notification[] = [
 
 const ALL_SKILLS = ["First Aid", "Medical", "Logistics", "Driving", "Construction", "Electrical", "Counseling", "Teaching", "Communication", "Cooking", "Search & Rescue", "Navigation", "Photography", "Documentation", "Translation", "Data Entry", "Coordination", "Shelter Mgmt", "Supply Chain"];
 
-type Section = "overview" | "tasks" | "issues" | "map" | "messages" | "profile" | "alerts";
+type Section = "overview" | "tasks" | "marketplace" | "issues" | "map" | "messages" | "profile" | "alerts";
 
 const shellSidebarItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
   { label: "Overview", id: "overview", icon: LayoutDashboard },
+  { label: "Marketplace", id: "marketplace", icon: ClipboardList },
   { label: "My Tasks", id: "tasks", icon: ListTodo },
   { label: "Nearby Issues", id: "issues", icon: MapPin },
   { label: "Map & Navigation", id: "map", icon: Map },
@@ -272,12 +275,12 @@ export default function DashboardVolunteer() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             <NetworkStatusWidget />
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <MetricCard icon={BarChart3} label="Assigned" value={stats.assigned} delay={0} />
-              <MetricCard icon={CheckCircle} label="Completed" value={stats.completed} trend={{ direction: "up", value: "+2" }} delay={100} />
-              <MetricCard icon={AlertTriangle} label="Active" value={stats.active} delay={200} />
-              <MetricCard icon={Star} label="Reliability" value={stats.reliability} delay={300} />
-              <MetricCard icon={Trophy} label="Badges" value={stats.badges} delay={400} />
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
+              <MetricCard icon={BarChart3} label={t('assigned', 'Assigned')} value={stats.assigned} delay={0} />
+              <MetricCard icon={CheckCircle} label={t('completed', 'Completed')} value={stats.completed} trend={{ direction: "up", value: "+2" }} delay={100} />
+              <MetricCard icon={AlertTriangle} label={t('active', 'Active')} value={stats.active} delay={200} />
+              <MetricCard icon={Star} label={t('reliability', 'Reliability')} value={stats.reliability} delay={300} />
+              <MetricCard icon={Trophy} label={t('badges', 'Badges')} value={stats.badges} delay={400} />
             </div>
 
             <AnimatePresence>
@@ -346,10 +349,10 @@ export default function DashboardVolunteer() {
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[...nearbyIssues]
-                    .filter(i => !acceptedTasks.includes(i.id))
+                    .filter((i) => !acceptedTasks.includes(i.id))
                     .sort((a, b) => calcPriorityScore(b) - calcPriorityScore(a))
                     .slice(0, 4)
-                    .map(issue => {
+                    .map((issue) => {
                       const score = calcPriorityScore(issue);
                       return (
                         <div key={issue.id} className="rounded-xl border bg-card p-4 shadow-card hover:shadow-hover transition-shadow">
@@ -371,6 +374,10 @@ export default function DashboardVolunteer() {
                 </div>
               </div>
             )}
+
+            <div className="mt-8">
+               <SafetyGuides />
+            </div>
           </motion.div>
         );
 
@@ -443,6 +450,13 @@ export default function DashboardVolunteer() {
                 })}
               </AnimatePresence>
             </div>
+          </motion.div>
+        );
+
+      case "marketplace":
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <TaskMarketplace />
           </motion.div>
         );
 

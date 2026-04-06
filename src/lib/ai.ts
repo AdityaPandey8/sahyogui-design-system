@@ -123,3 +123,38 @@ export async function analyzeIssue(data: {
     };
   }
 }
+
+/**
+ * Calculates a comprehensive priority score (0-100) based on AI analysis and metadata.
+ */
+export function calculateAIPriorityScore(
+  baseAiPriority: number,
+  urgency: "High" | "Medium" | "Low",
+  affectedPeople: number,
+  category: string
+): number {
+  let score = baseAiPriority;
+
+  // Urgency multiplier
+  const urgencyWeight = { High: 1.5, Medium: 1.0, Low: 0.5 };
+  const multiplier = urgencyWeight[urgency as keyof typeof urgencyWeight] || 1.0;
+  score *= multiplier;
+
+  // Impact weighting (logarithmic scale for affected people)
+  if (affectedPeople > 0) {
+    score += Math.log10(affectedPeople) * 5;
+  }
+
+  // Category weightings
+  const categoryBoosts: Record<string, number> = {
+    Disaster: 15,
+    Health: 10,
+    Food: 8,
+    Infrastructure: 5,
+    Safety: 12,
+  };
+  score += categoryBoosts[category] || 0;
+
+  // Normalize to 0-100
+  return Math.min(Math.max(Math.round(score), 0), 100);
+}

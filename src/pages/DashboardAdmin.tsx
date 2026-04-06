@@ -9,6 +9,8 @@ import { FilterBar } from "@/components/dashboard/FilterBar";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AIPriorityCard } from "@/components/dashboard/AIPriorityCard";
 import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
+import { AIInsightsCard } from "@/components/dashboard/AIInsightsCard";
+import { ImpactLeaderboard, ResourceTracker } from "@/components/dashboard/CommunityTools";
 import { QuickActionBar } from "@/components/dashboard/QuickActionBar";
 import { AIAnalyticsCharts } from "@/components/dashboard/AIAnalyticsCharts";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
@@ -196,23 +198,49 @@ export default function DashboardAdmin() {
               { label: crisisMode ? "Deactivate Crisis" : "Activate Crisis", icon: ShieldAlert, onClick: () => { setCrisisMode(!crisisMode); toast(crisisMode ? "Crisis mode deactivated" : "🚨 Crisis mode activated!"); }, variant: crisisMode ? "destructive" : "outline" },
             ]} />
             
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <MetricCard icon={BarChart3} label="Total Issues" value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
-              <MetricCard icon={AlertTriangle} label="Active Crises" value={stats.active} trend={{ direction: "up", value: "+1" }} delay={100} />
-              <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+2" }} delay={200} />
-              <MetricCard icon={Clock} label="Avg Response" value={stats.avgResponse} trend={{ direction: "down", value: "-12m" }} delay={300} />
-              <MetricCard icon={Users} label="Active Volunteers" value={stats.activeVols} delay={400} />
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
+              <MetricCard icon={BarChart3} label={t('total_issues', 'Total Issues')} value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
+              <MetricCard icon={AlertTriangle} label={t('active_crises', 'Active Crises')} value={stats.active} trend={{ direction: "up", value: "+1" }} delay={100} />
+              <MetricCard icon={CheckCircle} label={t('resolved', 'Resolved')} value={stats.resolved} trend={{ direction: "up", value: "+2" }} delay={200} />
+              <MetricCard icon={Clock} label={t('avg_response', 'Avg Response')} value={stats.avgResponse} trend={{ direction: "down", value: "-12m" }} delay={300} />
+              <MetricCard icon={Users} label={t('active_volunteers', 'Active Volunteers')} value={stats.activeVols} delay={400} />
             </div>
             
-            <div className="grid gap-6 lg:grid-cols-2">
-              {topIssue && <AIInsightsPanel issue={topIssue} />}
-              <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
-                <MapDashboard
-                  userRole="admin"
-                  issues={issueList}
-                  onIssueClick={setSelectedIssue}
-                />
+            <div className="grid gap-6 lg:grid-cols-6">
+              <div className="lg:col-span-2">
+                {topIssue && <AIInsightsPanel issue={topIssue} />}
               </div>
+              <div className="lg:col-span-2">
+                <AIInsightsCard />
+              </div>
+              <div className="lg:col-span-2">
+                {topIssue && <AIPriorityCard issue={topIssue} />}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
+              <MapDashboard
+                userRole="admin"
+                issues={issueList}
+                onIssueClick={setSelectedIssue}
+              />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-6 mt-8">
+              <div className="lg:col-span-3">
+                <ImpactLeaderboard />
+              </div>
+              <div className="lg:col-span-3">
+                <ResourceTracker />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
+              <MapDashboard
+                userRole="admin"
+                issues={issueList}
+                onIssueClick={setSelectedIssue}
+              />
             </div>
 
             {/* Verification quick view */}

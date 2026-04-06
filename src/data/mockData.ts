@@ -35,6 +35,20 @@ export interface Issue {
   coords: { x: number; y: number };
   photos: string[];
   locationRisk?: number;
+  requiredResources?: string[];
+  isAIVerified?: boolean;
+}
+
+export interface Task {
+  id: string;
+  issueId: string;
+  title: string;
+  description: string;
+  requiredSkills: string[];
+  volunteersNeeded: number;
+  volunteersSignedUp: number;
+  status: "Open" | "In Progress" | "Completed";
+  deadline: string;
 }
 
 export interface NGO {
@@ -111,6 +125,12 @@ export const issues: Issue[] = [
   { id: "ISS-008", title: "Shelter tents damaged by wind", description: "High winds have torn apart 15 relief tents in Camp B. Families exposed to elements.", urgency: "Low", status: "Pending", location: "Lucknow, Uttar Pradesh", category: "Shelter", images: [], reportedBy: "Meera Tiwari", assignedNgo: null, assignedVolunteers: [], responseTime: null, createdAt: "2026-03-23T07:00:00Z", upvotes: 9, comments: [], aiPriorityScore: 38, affectedPeople: 120, isAnonymous: false, isFake: false, coords: { x: 55, y: 35 }, photos: [] },
   { id: "ISS-009", title: "Communication tower down", description: "Cell tower in Block C non-functional. No mobile connectivity for 2 km radius.", urgency: "Medium", status: "Verified", location: "Ranchi, Jharkhand", category: "Communication", images: [], reportedBy: "Anil Dubey", assignedNgo: "NGO-002", assignedVolunteers: ["VOL-004"], responseTime: "6h", createdAt: "2026-03-22T12:00:00Z", upvotes: 7, comments: [], aiPriorityScore: 55, affectedPeople: 3200, isAnonymous: false, isFake: false, coords: { x: 62, y: 45 }, photos: [] },
   { id: "ISS-010", title: "Stray animal rescue needed", description: "Pack of stray dogs trapped in flooded underpass near Railway Station.", urgency: "Low", status: "Solved", location: "Ahmedabad, Gujarat", category: "Safety", images: [], reportedBy: "Pooja Shah", assignedNgo: "NGO-001", assignedVolunteers: ["VOL-001"], responseTime: "8h", createdAt: "2026-03-21T10:00:00Z", upvotes: 34, comments: [{ id: "c5", author: "Animal lover", text: "Thank you for rescuing them!", createdAt: "2026-03-21T20:00:00Z" }], aiPriorityScore: 22, affectedPeople: 0, isAnonymous: false, isFake: false, coords: { x: 30, y: 55 }, photos: [placeholderImage] },
+  { id: "ISS-011", title: "Emergency oxygen shortage", description: "City Hospital reported critical shortage of oxygen cylinders. 15 patients in ICU at risk.", urgency: "High", status: "Pending", location: "Mumbai, Maharashtra", category: "Health", images: [], reportedBy: "Dr. K. Nair", assignedNgo: null, assignedVolunteers: [], responseTime: null, createdAt: "2026-03-24T02:15:00Z", upvotes: 56, comments: [], aiPriorityScore: 98, affectedPeople: 45, isAnonymous: false, isFake: false, coords: { x: 51, y: 65 }, photos: [], requiredResources: ["Oxygen Cylinders", "ICU Meds"], isAIVerified: true },
+];
+
+export const tasks: Task[] = [
+  { id: "TSK-001", issueId: "ISS-001", title: "Food Distribution", description: "Distribute 200 food packets to stranded families in Sector 14.", requiredSkills: ["Logistics", "Local Language"], volunteersNeeded: 5, volunteersSignedUp: 3, status: "Open", deadline: "2026-03-24T18:00:00Z" },
+  { id: "TSK-002", issueId: "ISS-004", title: "Camp Management", description: "Help manage registration and sleeping arrangements at Patna relief camp.", requiredSkills: ["Coordination", "Patience"], volunteersNeeded: 8, volunteersSignedUp: 6, status: "In Progress", deadline: "2026-03-25T08:00:00Z" },
 ];
 
 export const ngos: NGO[] = [

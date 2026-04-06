@@ -9,7 +9,7 @@ import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AlertDetailDialog } from "@/components/dashboard/AlertDetailDialog";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
-import { SafetyTipsAccordion } from "@/components/dashboard/SafetyTipsAccordion";
+import { SafetyGuides } from "@/components/dashboard/SafetyGuides";
 import { type Notification } from "@/components/dashboard/NotificationBell";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
@@ -170,11 +170,11 @@ export default function DashboardPublic() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             <NetworkStatusWidget />
             
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <MetricCard icon={AlertTriangle} label="Total Issues" value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
-              <MetricCard icon={CheckCircle} label="Resolved" value={stats.resolved} trend={{ direction: "up", value: "+1" }} delay={100} />
-              <MetricCard icon={Flame} label="Active Crises" value={stats.high} delay={200} />
-              <MetricCard icon={User} label="Your Reports" value={myReports.length} delay={300} />
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+              <MetricCard icon={AlertTriangle} label={t('total_issues', 'Total Issues')} value={stats.total} trend={{ direction: "up", value: "+3" }} delay={0} />
+              <MetricCard icon={CheckCircle} label={t('resolved', 'Resolved')} value={stats.resolved} trend={{ direction: "up", value: "+1" }} delay={100} />
+              <MetricCard icon={Flame} label={t('active_crises', 'Active Crises')} value={stats.high} delay={200} />
+              <MetricCard icon={User} label={t('your_reports', 'Your Reports')} value={myReports.length} delay={300} />
             </div>
 
             {/* Live Alerts */}
@@ -198,7 +198,9 @@ export default function DashboardPublic() {
               </div>
             </div>
 
-            <SafetyTipsAccordion />
+            <div className="mt-8">
+               <SafetyGuides />
+            </div>
           </motion.div>
         );
 

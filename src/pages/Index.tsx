@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/landing/Navbar";
-import HeroSection from "@/components/ui/hero-section";
+import { ImageCarouselHero } from "@/components/ui/image-carousel-hero";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { MapPreviewSection } from "@/components/landing/MapPreviewSection";
@@ -12,7 +12,7 @@ import { PartnersSection } from "@/components/landing/PartnersSection";
 import { Footer } from "@/components/landing/Footer";
 import { RoleSelectionDialog } from "@/components/landing/RoleSelectionDialog";
 import { LiveActivityTicker } from "@/components/landing/LiveActivityTicker";
-import { Users, Building2, Heart } from "lucide-react";
+import { Users, Building2, Heart, ShieldAlert, Zap, Globe } from "lucide-react";
 
 function useScrollReveal() {
   useEffect(() => {
@@ -40,6 +40,15 @@ export default function Index() {
     document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const heroImages = [
+    { id: "1", src: "https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&q=80&w=400", alt: "Relief coordination", rotation: -5 },
+    { id: "2", src: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&q=80&w=400", alt: "Volunteers helping", rotation: 8 },
+    { id: "3", src: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=400", alt: "NGO support", rotation: -12 },
+    { id: "4", src: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=80&w=400", alt: "Community aid", rotation: 15 },
+    { id: "5", src: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=400", alt: "Emergency response", rotation: -3 },
+    { id: "6", src: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&q=80&w=400", alt: "Medical help", rotation: 10 },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar onGetStarted={() => setModalOpen(true)} />
@@ -48,28 +57,19 @@ export default function Index() {
         <LiveActivityTicker />
       </div>
 
-      <HeroSection
-        title={
-          <>
-            Connecting Communities with NGOs & Volunteers using{" "}
-            <span className="text-primary">AI</span>
-          </>
-        }
-
-        subtitle="SahyogAI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
-        actions={[
-          { text: "Get Started", onClick: () => setModalOpen(true), variant: "default" },
-          { text: "Learn More", onClick: scrollToFeatures, variant: "outline" },
-        ]}
-        stats={[
-          { value: "15K+", label: "Active Volunteers", icon: <Users className="h-4 w-4 sm:h-5 sm:w-5" /> },
-          { value: "200+", label: "Partner NGOs", icon: <Building2 className="h-4 w-4 sm:h-5 sm:w-5" /> },
-          { value: "50K+", label: "Issues Resolved", icon: <Heart className="h-4 w-4 sm:h-5 sm:w-5" /> },
-        ]}
-        images={[
-          "https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&q=80&w=900",
-          "https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&q=80&w=900",
-          "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=900",
+      <ImageCarouselHero
+        title="Connecting Communities with NGOs & Volunteers using AI"
+        subtitle="AI-Powered Crisis Coordination for a Safer Tomorrow"
+        description="SahyogUI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
+        ctaText="Get Started"
+        onCtaClick={() => setModalOpen(true)}
+        secondaryCtaText="Learn More"
+        onSecondaryCtaClick={() => scrollToFeatures()}
+        images={heroImages}
+        features={[
+          { title: "AI Prioritization", description: "Instantly rank issues by urgency and impact." },
+          { title: "Real-time Map", description: "Visualize crisis zones and response units live." },
+          { title: "Verified NGOs", description: "Trust-based network of certified aid organizations." },
         ]}
       />
 
@@ -89,6 +89,7 @@ export default function Index() {
       <div id="features">
         <FeaturesSection />
       </div>
+      <HowItWorksSection />
       <ImpactStatsSection />
       <div id="use-cases">
         <UseCasesSection />

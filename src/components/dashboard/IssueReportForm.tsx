@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ImagePlus, Brain, Loader2, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
-import { analyzeIssue } from "@/lib/ai";
+import { analyzeIssue, calculateAIPriorityScore } from "@/lib/ai";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Urgency, Category, Issue } from "@/data/mockData";
@@ -33,6 +33,7 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [aiResult, setAiResult] = useState<{ priority: number; suggestedCategory: string; responderType: string; summary: string } | null>(null);
+  const [calculatedScore, setCalculatedScore] = useState<number | null>(null);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -50,14 +51,24 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
     setAnalyzing(true);
     setAnalysisStep(0);
     setAiResult(null);
+    setCalculatedScore(null);
     try {
       // Simulate real processing time for effect
       const [result] = await Promise.all([
         analyzeIssue({ title, description, category }),
         new Promise(resolve => setTimeout(resolve, 3200))
       ]);
+      
+      const score = calculateAIPriorityScore(
+        result.priority,
+        result.priority > 80 ? "High" : result.priority > 40 ? "Medium" : "Low",
+        Math.floor(Math.random() * 500) + 10, // Simulated affected people for analysis
+        result.suggestedCategory
+      );
+
       setAiResult(result);
-      setUrgency(result.priority > 80 ? "High" : result.priority > 40 ? "Medium" : "Low");
+      setCalculatedScore(score);
+      setUrgency(score > 75 ? "High" : score > 35 ? "Medium" : "Low");
       setCategory(result.suggestedCategory as Category);
       toast.success("AI Analysis Complete");
     } catch (e) {
@@ -69,6 +80,13 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
 
   const handleSubmit = () => {
     if (!title.trim()) return;
+    const finalScore = calculatedScore ?? calculateAIPriorityScore(
+      Math.floor(Math.random() * 40) + 30,
+      urgency,
+      Math.floor(Math.random() * 500) + 10,
+      category
+    );
+
     const newIssue: Issue = {
       id: `ISS-${Date.now().toString(36).toUpperCase()}`,
       title,
@@ -84,7 +102,7 @@ export function IssueReportForm({ open, onOpenChange, onSubmit, prefill }: Issue
       createdAt: new Date().toISOString(),
       upvotes: 0,
       comments: [],
-      aiPriorityScore: aiResult?.priority ?? Math.floor(Math.random() * 40) + 50,
+      aiPriorityScore: finalScore,
       affectedPeople: Math.floor(Math.random() * 500) + 10,
       isAnonymous: anonymous,
       isFake: false,
