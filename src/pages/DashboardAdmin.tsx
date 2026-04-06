@@ -273,6 +273,16 @@ export default function DashboardAdmin() {
         );
 
 
+      case "analytics":
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+              <BarChart3 className="h-5 w-5 text-primary" /> AI Analytics Dashboard
+            </h2>
+            <AIAnalyticsCharts />
+          </motion.div>
+        );
+
       case "ngos":
         return (
           <div className="space-y-6">
