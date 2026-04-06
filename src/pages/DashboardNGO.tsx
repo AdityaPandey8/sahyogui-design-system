@@ -407,7 +407,7 @@ export default function DashboardNGO() {
       sidebarOpen={sidebarOpen}
       onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
       notifications={ngoNotifications}
-      autoToast={{ message: "📋 New issue reported in your area", description: "Flooded road near Sector 14 needs immediate attention", delay: 3500 }}
+      
       crisisMode={crisisMode}
     >
       {renderContent()}

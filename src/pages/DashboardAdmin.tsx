@@ -466,7 +466,7 @@ export default function DashboardAdmin() {
       sidebarOpen={sidebarOpen}
       onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
       notifications={adminNotifications}
-      autoToast={{ message: "⚠️ Issue pending verification", description: "3 new issues need your review", delay: 4000 }}
+      
       crisisMode={crisisMode}
     >
       {renderContent()}
