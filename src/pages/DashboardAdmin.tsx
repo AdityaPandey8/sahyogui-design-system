@@ -9,6 +9,7 @@ import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AIPriorityCard } from "@/components/dashboard/AIPriorityCard";
 import { AIInsightsPanel } from "@/components/dashboard/AIInsightsPanel";
 import { QuickActionBar } from "@/components/dashboard/QuickActionBar";
+import { AIAnalyticsCharts } from "@/components/dashboard/AIAnalyticsCharts";
 import { IssueReportForm } from "@/components/dashboard/IssueReportForm";
 import { IssueDetailDialog } from "@/components/dashboard/IssueDetailDialog";
 import { NGODetailDialog } from "@/components/dashboard/NGODetailDialog";
@@ -33,11 +34,12 @@ import {
 import { toast } from "sonner";
 import type { PastCrisis, Alert as AlertType } from "@/data/mockData";
 
-type AdminSection = "overview" | "issues" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
+type AdminSection = "overview" | "issues" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
 
 const sidebarItems: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "issues", label: "Issues", icon: FileText },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "ngos", label: "NGOs", icon: Building2 },
   { id: "volunteers", label: "Volunteers", icon: Users },
   { id: "alerts", label: "Alerts", icon: Bell },
