@@ -28,20 +28,22 @@ export default function Auth() {
   );
   const [loading, setLoading] = useState(false);
 
-  // Check if already logged in
+  // Redirect immediately on auth state change
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) navigate(`/dashboard/${data.role}`, { replace: true });
-          });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+          const role = data?.role || (session.user.user_metadata?.role as string) || "public";
+          navigate(`/dashboard/${role}`, { replace: true });
+        }
       }
-    });
+    );
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,12 +72,14 @@ export default function Auth() {
         setLoading(false);
         return;
       }
-      toast.success("Account created! Redirecting...");
-      // Auto-login after signup (Supabase default for dev)
+      // Try auto-login after signup
       const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (!loginError) {
-        navigate(`/dashboard/${selectedRole}`, { replace: true });
+      if (loginError) {
+        toast.success("Account created! Please check your email to confirm.");
+        setLoading(false);
+        return;
       }
+      // onAuthStateChange will handle the redirect
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -83,18 +87,8 @@ export default function Auth() {
         setLoading(false);
         return;
       }
-      // Fetch role and redirect
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        navigate(`/dashboard/${profile?.role || "public"}`, { replace: true });
-      }
+      // onAuthStateChange will handle the redirect
     }
-    setLoading(false);
   };
 
   return (
