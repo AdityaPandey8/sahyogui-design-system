@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell, type Notification } from "@/components/dashboard/NotificationBell";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, PanelLeftClose, PanelLeft, LogOut, Settings, Languages, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, PanelLeftClose, PanelLeft, LogOut, Settings, Languages, LayoutDashboard, ShieldAlert } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,9 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import { ShieldAlert, ArrowLeft, PanelLeftClose, PanelLeft, LogOut, Settings, Languages, LayoutDashboard } from "lucide-react";
 
 interface SidebarItem<T extends string> {
   id: T;
@@ -46,11 +43,6 @@ interface DashboardShellProps<T extends string> {
   notifications?: Notification[];
   crisisMode?: boolean;
   headerExtra?: ReactNode;
-  autoToast?: {
-    message: string;
-    description?: string;
-    delay?: number;
-  };
   children: ReactNode;
 }
 
@@ -244,7 +236,7 @@ export function DashboardShell<T extends string>({
                 </Select>
               </div>
               <div className="h-6 w-px bg-border/50 mx-1" />
-              <NotificationBell notifications={notifications} autoToast={autoToast} />
+              <NotificationBell notifications={notifications} />
               <div className="h-6 w-px bg-border/50 mx-1" />
               <ThemeToggle />
             </div>

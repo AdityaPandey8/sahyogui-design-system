@@ -66,11 +66,6 @@ export default function Index() {
         secondaryCtaText="Learn More"
         onSecondaryCtaClick={() => scrollToFeatures()}
         images={heroImages}
-        features={[
-          { title: "AI Prioritization", description: "Instantly rank issues by urgency and impact." },
-          { title: "Real-time Map", description: "Visualize crisis zones and response units live." },
-          { title: "Verified NGOs", description: "Trust-based network of certified aid organizations." },
-        ]}
       />
 
       {/* About */}

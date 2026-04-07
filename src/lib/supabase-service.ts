@@ -1,4 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
+const SUPABASE_URL = "https://yiejtairiylxpxwkghsm.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZWp0YWlyaXlseHB4d2tnaHNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMzc4OTMsImV4cCI6MjA5MDYxMzg5M30.qEwgN9YXVSHs-jzu9nr1V1iM36neRr-cpmVuPdMpO-w";
+// Use an untyped client for tables not in the generated types
+const supabaseUntyped = createClient(SUPABASE_URL, SUPABASE_KEY);
 import { issues as mockIssues, alerts as mockAlerts, ngos as mockNgos, volunteers as mockVolunteers, type Issue, type Alert, type NGO, type Volunteer } from "@/data/mockData";
 
 export const getIssues = async (): Promise<Issue[]> => {

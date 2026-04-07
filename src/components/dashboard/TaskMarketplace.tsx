@@ -7,6 +7,7 @@ import { tasks as mockTasks, type Task } from "@/data/mockData";
 import { ClipboardList, Users, Clock, Search, Filter, CheckCircle2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function TaskMarketplace() {
   const [search, setSearch] = useState("");

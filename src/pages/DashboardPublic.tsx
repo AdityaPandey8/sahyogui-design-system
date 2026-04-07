@@ -23,6 +23,7 @@ import {
   Heart, Target, Clock, Sparkles, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 const publicNotifications: Notification[] = [
@@ -52,6 +53,7 @@ const profileBadges = [
 ];
 
 export default function DashboardPublic() {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState<Section>("home");
   const [issueList, setIssueList] = useState<Issue[]>([]);
