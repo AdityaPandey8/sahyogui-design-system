@@ -18,11 +18,6 @@ export interface Notification {
 
 interface NotificationBellProps {
   notifications: Notification[];
-  autoToast?: {
-    message: string;
-    description?: string;
-    delay?: number;
-  };
 }
 
 const typeConfig = {
@@ -32,24 +27,9 @@ const typeConfig = {
   success: { icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
 };
 
-export function NotificationBell({ notifications: initialNotifs, autoToast }: NotificationBellProps) {
+export function NotificationBell({ notifications: initialNotifs }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifs);
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  useEffect(() => {
-    if (autoToast) {
-      const timer = setTimeout(() => {
-        toast(autoToast.message, {
-          description: autoToast.description,
-          action: {
-            label: "View",
-            onClick: () => console.log("Notification clicked"),
-          },
-        });
-      }, autoToast.delay || 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [autoToast]);
 
   const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
