@@ -7,7 +7,7 @@ import { issues as mockIssues, alerts as mockAlerts, ngos as mockNgos, volunteer
 
 export const getIssues = async (): Promise<Issue[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('issues')
       .select('*')
       .order('createdAt', { ascending: false });
@@ -27,7 +27,7 @@ export const getIssues = async (): Promise<Issue[]> => {
 
 export const getAlerts = async (): Promise<Alert[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('alerts')
       .select('*')
       .order('createdAt', { ascending: false });
@@ -47,7 +47,7 @@ export const getAlerts = async (): Promise<Alert[]> => {
 
 export const getNGOs = async (): Promise<NGO[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('ngos')
       .select('*');
 
@@ -66,7 +66,7 @@ export const getNGOs = async (): Promise<NGO[]> => {
 
 export const getVolunteers = async (): Promise<Volunteer[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('volunteers')
       .select('*');
 
@@ -92,7 +92,7 @@ export const createIssue = async (issue: Omit<Issue, 'id' | 'createdAt' | 'upvot
       createdAt: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('issues')
       .insert([newIssue])
       .select()
@@ -118,7 +118,7 @@ export const createIssue = async (issue: Omit<Issue, 'id' | 'createdAt' | 'upvot
 
 export const upvoteIssue = async (issueId: string): Promise<boolean> => {
   try {
-    const { error } = await supabase.rpc('increment_upvotes', { row_id: issueId });
+    const { error } = await supabaseUntyped.rpc('increment_upvotes', { row_id: issueId });
     if (error) {
       console.error("Error upvoting issue in Supabase:", error);
       return true; // Simulate success
@@ -131,7 +131,7 @@ export const upvoteIssue = async (issueId: string): Promise<boolean> => {
 
 export const claimIssue = async (issueId: string, ngoId: string | null): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseUntyped
       .from('issues')
       .update({ assignedNgo: ngoId, status: ngoId ? 'Verified' : 'Pending' })
       .eq('id', issueId);
@@ -148,7 +148,7 @@ export const claimIssue = async (issueId: string, ngoId: string | null): Promise
 
 export const updateIssueStatus = async (issueId: string, status: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseUntyped
       .from('issues')
       .update({ status })
       .eq('id', issueId);
@@ -165,7 +165,7 @@ export const updateIssueStatus = async (issueId: string, status: string): Promis
 
 export const toggleVolunteerAvailability = async (volId: string, available: boolean): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseUntyped
       .from('volunteers')
       .update({ available })
       .eq('id', volId);
@@ -182,7 +182,7 @@ export const toggleVolunteerAvailability = async (volId: string, available: bool
 
 export const updateVolunteerStatus = async (volId: string, blocked: boolean): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseUntyped
       .from('volunteers')
       .update({ blocked })
       .eq('id', volId);
