@@ -388,6 +388,7 @@ export default function DataProtection() {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

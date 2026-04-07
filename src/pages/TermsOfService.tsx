@@ -280,6 +280,7 @@ export default function TermsOfService() {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

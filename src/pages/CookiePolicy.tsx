@@ -301,6 +301,7 @@ export default function CookiePolicy() {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
