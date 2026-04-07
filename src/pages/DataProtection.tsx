@@ -2,10 +2,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Shield, Lock, Database, AlertTriangle, CheckCircle, FileText } from "lucide-react";
+import { Navbar } from "@/components/landing/Navbar";
+import { Footer } from "@/components/landing/Footer";
+import { useNavigate } from "react-router-dom";
 
 export default function DataProtection() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background">
+      <Navbar onGetStarted={() => navigate("/auth")} />
       {/* Header */}
       <div className="border-b bg-secondary/20">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
@@ -383,6 +388,7 @@ export default function DataProtection() {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
