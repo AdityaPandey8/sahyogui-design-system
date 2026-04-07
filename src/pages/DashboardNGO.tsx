@@ -36,6 +36,7 @@ import {
   Bell, Eye, ShieldCheck, ShieldOff, X, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type NgoSection = "overview" | "issues" | "volunteers" | "otherNgos" | "alerts" | "communication";
 
@@ -55,6 +56,7 @@ const ngoNotifications: Notification[] = [
 ];
 
 export default function DashboardNGO() {
+  const { t } = useTranslation();
   const [section, setSection] = useState<NgoSection>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [issueList, setIssueList] = useState<Issue[]>([]);

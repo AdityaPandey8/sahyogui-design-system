@@ -35,6 +35,7 @@ import {
   Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { pastCrises as mockPastCrises } from "@/data/mockData";
 
 type AdminSection = "overview" | "issues" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
@@ -57,6 +58,7 @@ const adminNotifications: Notification[] = [
 ];
 
 export default function DashboardAdmin() {
+  const { t } = useTranslation();
   const [section, setSection] = useState<AdminSection>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [issueList, setIssueList] = useState<Issue[]>([]);
