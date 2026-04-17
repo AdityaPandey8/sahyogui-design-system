@@ -18,6 +18,8 @@ export function LiveActivityTicker() {
     setCurrentIssue(issues[index]);
   }, [index]);
 
+  if (!currentIssue) return null;
+
   return (
     <div className="bg-primary/5 border-y border-primary/10 py-2 overflow-hidden whitespace-nowrap">
       <div className="container mx-auto px-4 flex items-center gap-6">

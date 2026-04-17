@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { type Issue, type NGO, type Volunteer, type Alert as AlertType } from "@/data/mockData";
 import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, claimIssue, updateIssueStatus } from "@/lib/supabase-service";
+import { supabase } from "@/integrations/supabase/client";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -27,23 +28,25 @@ import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock,
   Plus, ShieldAlert, Brain, Send, Megaphone, HandHelping,
   Trophy, UserCheck, Handshake, LayoutDashboard, FileText, Building2,
-  Bell, Eye, ShieldCheck, ShieldOff, X, Loader2
+  Bell, Eye, ShieldCheck, ShieldOff, X, Loader2, Heart, Activity, UserPlus, Globe
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/useAuth";
 
 type NgoSection = "overview" | "issues" | "volunteers" | "otherNgos" | "alerts" | "communication";
 
 const sidebarItems: { id: NgoSection; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "issues", label: "Issues", icon: FileText },
-  { id: "volunteers", label: "Volunteers", icon: Users },
+  { id: "volunteers", label: "Volunteers", icon: Heart },
   { id: "otherNgos", label: "Other NGOs", icon: Building2 },
   { id: "alerts", label: "Alerts", icon: Bell },
   { id: "communication", label: "Communication", icon: Megaphone },
@@ -77,6 +80,81 @@ export default function DashboardNGO() {
   const [selectedAlert, setSelectedAlert] = useState<AlertType | null>(null);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [crisisMode, setCrisisMode] = useState(false);
+  const { user } = useAuth();
+  
+  const [myVols, setMyVols] = useState<any[]>([]);
+  const [globalPool, setGlobalPool] = useState<any[]>([]);
+  const [joinRequests, setJoinRequests] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchVols = async () => {
+      if (!user) return;
+
+      // Fetch NGO's own volunteers
+      const { data: relations } = await supabase
+        .from("ngo_volunteer_relations")
+        .select("volunteer_id")
+        .eq("ngo_id", user.id);
+      
+      if (relations) {
+        const volIds = relations.map(r => r.volunteer_id);
+        const { data: vols } = await supabase
+          .from("volunteer_details")
+          .select("*")
+          .in("id", volIds);
+        if (vols) setMyVols(vols);
+      }
+
+      // Fetch Global Pool (Verified volunteers not already with this NGO)
+      const { data: pool } = await supabase
+        .from("volunteer_details")
+        .select("*")
+        .eq("verification_status", "verified")
+        .limit(20);
+      if (pool) setGlobalPool(pool);
+
+      // Fetch Join Requests
+      const { data: requests } = await supabase
+        .from("volunteer_join_requests")
+        .select("*, volunteer_details(*)")
+        .eq("ngo_id", user.id)
+        .eq("status", "pending");
+      if (requests) setJoinRequests(requests);
+    };
+
+    if (section === "volunteers") {
+      fetchVols();
+    }
+  }, [section, user]);
+
+  const handleInviteVol = async (volId: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("ngo_volunteer_relations")
+      .insert({ ngo_id: user.id, volunteer_id: volId });
+    
+    if (!error) {
+      toast.success("Volunteer invited and added to your team!");
+      // Refresh list logic
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string, volId: string) => {
+    if (!user) return;
+    const { error: relError } = await supabase
+      .from("ngo_volunteer_relations")
+      .insert({ ngo_id: user.id, volunteer_id: volId });
+    
+    if (!relError) {
+      await supabase
+        .from("volunteer_join_requests")
+        .update({ status: "verified" })
+        .eq("id", requestId);
+      
+      toast.success("Volunteer request accepted!");
+      setJoinRequests(prev => prev.filter(r => r.id !== requestId));
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -354,57 +432,123 @@ export default function DashboardNGO() {
       case "volunteers":
         return (
           <div className="space-y-6">
-            <h2 className="text-base font-bold flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Volunteer Management</h2>
-            <div className="rounded-xl border overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Skills</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Tasks</TableHead>
-                    <TableHead>Reliability</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {volList.map(vol => (
-                    <TableRow key={vol.id} className="transition-colors hover:bg-muted/50">
-                      <TableCell className="font-medium text-sm">{vol.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">{vol.skills.join(", ")}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{vol.location}</TableCell>
-                      <TableCell className="tabular-nums">{vol.tasksCompleted}</TableCell>
-                      <TableCell className="tabular-nums">{vol.reliabilityScore}</TableCell>
-                      <TableCell>
-                        <span className={cn("text-xs font-medium", vol.blocked ? "text-danger" : vol.available ? "text-success" : "text-muted-foreground")}>
-                          {vol.blocked ? "Blocked" : vol.available ? "Active" : "Offline"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedVol(vol)}><Eye className="h-3 w-3 mr-1" />Details</Button>
-                          <Button size="sm" variant={vol.blocked ? "default" : "destructive"} className="h-7 text-xs" onClick={() => handleBlockVol(vol.id)}>
-                            {vol.blocked ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => toast.success(`Task assigned to ${vol.name}`)}><UserCheck className="h-3 w-3" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Smart Matching */}
-            <div>
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-primary" /> Smart Volunteer Matching</h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {matchedVolunteers.slice(0, 4).map((m, i) => (
-                  <VolunteerMatchCard key={m.volunteer.id} volunteer={m.volunteer} matchScore={m.matchScore} distance={m.distance} highlight={i === 0} onAssign={() => toast.success(`${m.volunteer.name} assigned!`)} />
-                ))}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+                <Heart className="h-5 w-5 text-primary" /> Volunteer Coordination
+              </h2>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" className="gap-2 rounded-xl">
+                  <UserPlus className="h-4 w-4" /> Invite by Email
+                </Button>
               </div>
             </div>
+
+            <Tabs defaultValue="my-team" className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-3 rounded-xl bg-muted/50 p-1">
+                <TabsTrigger value="my-team" className="rounded-lg font-bold">My Team ({myVols.length})</TabsTrigger>
+                <TabsTrigger value="global" className="rounded-lg font-bold">Global Pool</TabsTrigger>
+                <TabsTrigger value="requests" className="rounded-lg font-bold">Requests ({joinRequests.length})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="my-team" className="mt-6 space-y-6">
+                <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Volunteer</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Skills</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Reliability</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                        <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myVols.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">You haven't added any volunteers yet.</TableCell></TableRow>
+                      ) : (
+                        myVols.map((vol) => (
+                          <TableRow key={vol.id} className="transition-colors hover:bg-primary/5">
+                            <TableCell>
+                              <p className="font-bold text-sm">{vol.full_name}</p>
+                              <p className="text-[10px] text-muted-foreground">{vol.location_text || "On Ground"}</p>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {vol.skills?.slice(0, 2).map((s: string) => (
+                                  <span key={s} className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">{s}</span>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono font-bold text-success">{vol.reliability_score || "4.5"}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5">
+                                <div className={cn("h-1.5 w-1.5 rounded-full", vol.availability ? "bg-success" : "bg-muted-foreground")} />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">{vol.availability ? "Active" : "Busy"}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button size="sm" variant="outline" className="h-8 rounded-lg font-bold">Assign Task</Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"><ShieldOff className="h-4 w-4" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="global" className="mt-6 space-y-6">
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <p className="text-sm font-medium">AI-Recommended volunteers from the global pool nearby</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {globalPool.map((vol) => (
+                    <div key={vol.id} className="rounded-2xl border bg-card/50 p-4 backdrop-blur-sm flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-sm">{vol.full_name}</p>
+                        <p className="text-[10px] text-muted-foreground mb-2">{vol.skills?.join(", ")}</p>
+                        <div className="flex gap-2">
+                           <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] font-bold uppercase tracking-tight">Verified</span>
+                           <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">Score: {vol.trust_score}</span>
+                        </div>
+                      </div>
+                      <Button size="sm" className="rounded-xl font-bold" onClick={() => handleInviteVol(vol.id)}>Invite to Team</Button>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="requests" className="mt-6 space-y-4">
+                 {joinRequests.length === 0 ? (
+                    <div className="h-32 flex flex-col items-center justify-center rounded-2xl border border-dashed text-muted-foreground">
+                       <Clock className="h-6 w-6 mb-2 opacity-20" />
+                       <p className="text-sm italic">No pending join requests</p>
+                    </div>
+                 ) : (
+                    joinRequests.map((req) => (
+                       <div key={req.id} className="rounded-2xl border bg-card/50 p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                                {req.volunteer_details?.full_name?.charAt(0)}
+                             </div>
+                             <div>
+                                <p className="font-bold text-sm">{req.volunteer_details?.full_name}</p>
+                                <p className="text-[10px] text-muted-foreground italic">"{req.message || "I want to help your NGO"}"</p>
+                             </div>
+                          </div>
+                          <div className="flex gap-2">
+                             <Button size="sm" className="rounded-lg font-bold" onClick={() => handleAcceptRequest(req.id, req.volunteer_id)}>Accept</Button>
+                             <Button size="sm" variant="ghost" className="rounded-lg font-bold text-destructive">Decline</Button>
+                          </div>
+                       </div>
+                    ))
+                 )}
+              </TabsContent>
+            </Tabs>
           </div>
         );
 

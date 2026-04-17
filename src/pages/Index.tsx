@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/landing/Navbar";
 import { ImageCarouselHero } from "@/components/ui/image-carousel-hero";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
@@ -10,9 +11,7 @@ import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { UseCasesSection } from "@/components/landing/UseCasesSection";
 import { PartnersSection } from "@/components/landing/PartnersSection";
 import { Footer } from "@/components/landing/Footer";
-import { RoleSelectionDialog } from "@/components/landing/RoleSelectionDialog";
 import { LiveActivityTicker } from "@/components/landing/LiveActivityTicker";
-import { Users, Building2, Heart, ShieldAlert, Zap, Globe } from "lucide-react";
 
 function useScrollReveal() {
   useEffect(() => {
@@ -33,7 +32,7 @@ function useScrollReveal() {
 }
 
 export default function Index() {
-  const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
   useScrollReveal();
 
   const scrollToFeatures = () => {
@@ -51,7 +50,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onGetStarted={() => setModalOpen(true)} />
+      <Navbar onGetStarted={() => navigate("/auth")} />
       
       <div className="pt-14 sm:pt-16 md:pt-20">
         <LiveActivityTicker />
@@ -62,7 +61,7 @@ export default function Index() {
         subtitle="AI-Powered Crisis Coordination for a Safer Tomorrow"
         description="SahyogUI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
         ctaText="Get Started"
-        onCtaClick={() => setModalOpen(true)}
+        onCtaClick={() => navigate("/auth")}
         secondaryCtaText="Learn More"
         onSecondaryCtaClick={() => scrollToFeatures()}
         images={heroImages}
@@ -99,8 +98,6 @@ export default function Index() {
       </div>
 
       <Footer />
-
-      <RoleSelectionDialog open={modalOpen} onOpenChange={setModalOpen} />
     </div>
   );
 }

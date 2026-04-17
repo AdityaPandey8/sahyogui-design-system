@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { type Issue, type Alert, type NGO, type Volunteer } from "@/data/mockData";
 import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, updateIssueStatus, toggleVolunteerAvailability } from "@/lib/supabase-service";
+import { supabase } from "@/integrations/supabase/client";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MapDashboard } from "@/components/dashboard/MapDashboard";
 import { getLatLng } from "@/lib/map-utils";
@@ -25,17 +26,20 @@ import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
   LayoutDashboard, ClipboardList, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
-  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren, Loader2
+  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren, Loader2, Globe, ShieldCheck, Heart, UserPlus
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { calcPriorityScore } from "@/lib/ai-insights";
+import { useAuth } from "@/hooks/useAuth";
 
 const volNotifications: Notification[] = [
   { id: "n1", title: "New Task Assigned", message: "Food shortage relief task near you.", type: "warning", time: "3m ago", read: false },
@@ -45,13 +49,14 @@ const volNotifications: Notification[] = [
 
 const ALL_SKILLS = ["First Aid", "Medical", "Logistics", "Driving", "Construction", "Electrical", "Counseling", "Teaching", "Communication", "Cooking", "Search & Rescue", "Navigation", "Photography", "Documentation", "Translation", "Data Entry", "Coordination", "Shelter Mgmt", "Supply Chain"];
 
-type Section = "overview" | "tasks" | "marketplace" | "issues" | "map" | "messages" | "profile" | "alerts";
+type Section = "overview" | "tasks" | "marketplace" | "issues" | "map" | "ngos" | "messages" | "profile" | "alerts";
 
 const shellSidebarItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
   { label: "Overview", id: "overview", icon: LayoutDashboard },
   { label: "Marketplace", id: "marketplace", icon: ClipboardList },
   { label: "My Tasks", id: "tasks", icon: ListTodo },
   { label: "Nearby Issues", id: "issues", icon: MapPin },
+  { label: "NGOs", id: "ngos", icon: Building2 },
   { label: "Map & Navigation", id: "map", icon: Map },
   { label: "Messages", id: "messages", icon: MessageSquare },
   { label: "Profile", id: "profile", icon: UserCircle },
@@ -92,6 +97,61 @@ export default function DashboardVolunteer() {
   const [completedTasks, setCompletedTasks] = useState<string[]>(["ISS-007", "ISS-010"]);
   const [reportOpen, setReportOpen] = useState(false);
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
+  const { user } = useAuth();
+  
+  const [volDetails, setVolDetails] = useState<any>(null);
+  const [myNgos, setMyNgos] = useState<any[]>([]);
+  const [pendingJoinRequests, setPendingJoinRequests] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchVolData = async () => {
+      if (!user) return;
+      
+      const { data: details } = await supabase
+        .from("volunteer_details")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      if (details) setVolDetails(details);
+
+      const { data: relations } = await supabase
+        .from("ngo_volunteer_relations")
+        .select("ngo_id")
+        .eq("volunteer_id", user.id);
+      
+      if (relations) {
+        const ngoIds = relations.map(r => r.ngo_id);
+        const { data: ngos } = await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", ngoIds);
+        if (ngos) setMyNgos(ngos);
+      }
+
+      const { data: requests } = await supabase
+        .from("volunteer_join_requests")
+        .select("ngo_id")
+        .eq("volunteer_id", user.id)
+        .eq("status", "pending");
+      if (requests) setPendingJoinRequests(requests.map(r => r.ngo_id));
+    };
+
+    fetchVolData();
+  }, [user]);
+
+  const handleRequestToJoin = async (ngoId: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("volunteer_join_requests")
+      .insert({ volunteer_id: user.id, ngo_id: ngoId, message: "I'd like to join your team." });
+    
+    if (!error) {
+      toast.success("Join request sent to NGO!");
+      setPendingJoinRequests(prev => [...prev, ngoId]);
+    } else {
+      toast.error("Failed to send request.");
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -576,111 +636,159 @@ export default function DashboardVolunteer() {
       case "profile":
         return (
           <div className="space-y-6">
-            {/* Profile header */}
-            <div className="rounded-xl border bg-card p-5">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xl">
-                  {currentVol.name.split(" ").map(n => n[0]).join("")}
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold">{currentVol.name}</h2>
-                  <p className="text-xs text-muted-foreground">{currentVol.location} • {currentVol.phone}</p>
-                  <AvailabilityToggle status={availability} onChange={handleAvailabilityChange} />
-                </div>
-              </div>
-            </div>
-
-            {/* Editable Skills */}
-            <div className="rounded-xl border bg-card p-5">
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5"><User className="h-4 w-4 text-primary" /> Skills</h3>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {skills.map(s => (
-                  <span key={s} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary flex items-center gap-1.5">
-                    {s}
-                    <button onClick={() => handleRemoveSkill(s)} className="hover:text-destructive"><X className="h-3 w-3" /></button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {ALL_SKILLS.filter(s => !skills.includes(s)).slice(0, 8).map(s => (
-                  <Button key={s} size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => handleAddSkill(s)}>
-                    <Plus className="h-3 w-3" /> {s}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Performance Stats */}
-            <div>
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5"><Trophy className="h-4 w-4 text-warning" /> Performance</h3>
-              <div className="grid gap-3 sm:grid-cols-4">
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums">{currentVol.tasksCompleted}</p><p className="text-xs text-muted-foreground">Tasks Done</p></div>
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums text-success">{currentVol.responseRate}%</p><p className="text-xs text-muted-foreground">Response Rate</p></div>
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums text-primary">{currentVol.reliabilityScore}</p><p className="text-xs text-muted-foreground">Reliability</p></div>
-                <div className="rounded-xl border bg-card p-5 text-center"><p className="text-2xl font-bold tabular-nums">#3</p><p className="text-xs text-muted-foreground">Ranking</p></div>
-              </div>
-            </div>
-
-            {/* Badges */}
-            <div>
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5"><Star className="h-4 w-4 text-warning" /> Rewards & Badges</h3>
-              <BadgeDisplay tasksCompleted={currentVol.tasksCompleted} reliabilityScore={currentVol.reliabilityScore} />
-            </div>
-
-            {/* Activity History - Expandable */}
-            <div>
-              <h3 className="text-sm font-bold mb-3">Activity History</h3>
-              <div className="space-y-2">
-                {activities.map(a => (
-                  <div key={a.id} className="rounded-lg border bg-card overflow-hidden">
-                    <button
-                      className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors"
-                      onClick={() => setExpandedActivity(expandedActivity === a.id ? null : a.id)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={cn("h-2 w-2 rounded-full",
-                          a.type === "completed" ? "bg-success" : a.type === "emergency" ? "bg-destructive" : a.type === "assigned" ? "bg-primary" : "bg-warning"
-                        )} />
-                        <span className="text-xs font-medium">{a.action}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground">{a.time}</span>
-                        {expandedActivity === a.id ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                      </div>
-                    </button>
-                    {expandedActivity === a.id && (
-                      <div className="px-3 pb-3 pt-0 border-t">
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {a.type === "completed" ? "Successfully completed this task. Verified by assigned NGO." :
-                           a.type === "emergency" ? "Joined emergency response team. Coordinated with NDRF and local authorities." :
-                           a.type === "assigned" ? "Task accepted and work commenced. ETA provided to coordinating NGO." :
-                           "Status updated and progress reported to dashboard."}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">Category: {a.type} • Logged: {a.time}</p>
-                      </div>
-                    )}
+            <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-6 shadow-xl shadow-primary/5">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="relative">
+                  <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center border-4 border-background shadow-xl">
+                    <User className="h-12 w-12 text-primary" />
                   </div>
-                ))}
+                  <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-background border-2 border-primary/20 flex items-center justify-center">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-2">
+                    <h2 className="text-2xl font-bold tracking-tight">{volDetails?.full_name || "Volunteer"}</h2>
+                    <div className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider",
+                      volDetails?.type === "ngo_verified" ? "bg-success/10 text-success border-success/20" :
+                      volDetails?.type === "verified" ? "bg-primary/10 text-primary border-primary/20" :
+                      "bg-muted/50 text-muted-foreground border-border/50"
+                    )}>
+                      {volDetails?.type?.replace("_", " ") || "Basic"} Member
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-1.5 mb-4">
+                    <MapPin className="h-3.5 w-3.5" /> {volDetails?.location_text || "India, Earth"}
+                  </p>
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Trust Score</p>
+                      <p className="text-xl font-bold text-primary">{volDetails?.trust_score || "50"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Missions</p>
+                      <p className="text-xl font-bold">{volDetails?.tasks_completed || "0"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Status</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className={cn("h-2 w-2 rounded-full animate-pulse", volDetails?.availability ? "bg-success" : "bg-muted-foreground")} />
+                        <span className="text-xs font-bold">{volDetails?.availability ? "Available" : "Busy"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Connected NGOs */}
-            <div>
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5"><Building2 className="h-4 w-4 text-primary" /> Connected NGOs</h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {connectedNgos.map(ngo => (
-                  <div key={ngo.id} className="rounded-xl border bg-card p-4 transition-all hover:shadow-md">
-                    <h4 className="text-sm font-semibold">{ngo.name}</h4>
-                    <p className="text-xs text-muted-foreground">{ngo.focusArea} • {ngo.location}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{ngo.issuesHandled} issues handled • {ngo.successRate}% success</p>
-                    <Button size="sm" variant="outline" className="h-7 text-xs mt-2 gap-1" onClick={() => setSelectedNgoId(ngo.id)}>
-                      <Eye className="h-3 w-3" /> View Details
-                    </Button>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border bg-card/40 p-6">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" /> Core Skills
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {volDetails?.skills?.map((skill: string) => (
+                    <span key={skill} className="px-3 py-1.5 rounded-xl bg-background border border-border/50 text-xs font-bold text-foreground flex items-center gap-2">
+                      <div className="h-1 w-1 rounded-full bg-primary" /> {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-card/40 p-6">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                  <Award className="h-4 w-4 text-warning" /> Achievements
+                </h3>
+                <div className="flex gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning grayscale opacity-50">
+                    <Trophy className="h-6 w-6" />
                   </div>
-                ))}
-                {connectedNgos.length === 0 && <p className="text-sm text-muted-foreground">Not connected to any NGO yet.</p>}
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary grayscale opacity-50">
+                    <Star className="h-6 w-6" />
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        );
+
+      case "ngos":
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+                <Building2 className="h-5 w-5 text-primary" /> NGO Organizations
+              </h2>
+            </div>
+
+            <Tabs defaultValue="my-ngos" className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl bg-muted/50 p-1">
+                <TabsTrigger value="my-ngos" className="rounded-lg font-bold">My NGOs ({myNgos.length})</TabsTrigger>
+                <TabsTrigger value="explore" className="rounded-lg font-bold">Explore</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="my-ngos" className="mt-6">
+                 {myNgos.length === 0 ? (
+                    <div className="py-20 text-center rounded-3xl border border-dashed border-muted-foreground/20 bg-muted/5">
+                      <Building2 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground font-medium italic">You are not affiliated with any NGO yet.</p>
+                      <Button variant="link" onClick={() => setSection("ngos")} className="mt-2 text-primary font-bold">Explore & Join One</Button>
+                    </div>
+                 ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                       {myNgos.map((ngo) => (
+                          <div key={ngo.id} className="rounded-2xl border bg-card/50 p-5 flex items-center justify-between group hover:shadow-xl transition-all">
+                             <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                   {ngo.email?.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                   <p className="font-bold text-sm">{ngo.email}</p>
+                                   <div className="flex items-center gap-1.5 mt-1">
+                                      <ShieldCheck className="h-3 w-3 text-success" />
+                                      <span className="text-[10px] font-bold text-success uppercase">Partnered</span>
+                                   </div>
+                                </div>
+                             </div>
+                             <Button size="sm" variant="outline" className="rounded-lg font-bold">Dashboard</Button>
+                          </div>
+                       ))}
+                    </div>
+                 )}
+              </TabsContent>
+
+              <TabsContent value="explore" className="mt-6">
+                 <div className="grid gap-4 sm:grid-cols-2">
+                    {ngoList.map((ngo) => (
+                       <div key={ngo.id} className="rounded-2xl border bg-card/50 p-5 group hover:shadow-xl transition-all">
+                          <div className="flex items-start justify-between mb-4">
+                             <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center font-bold">
+                                   {ngo.name?.charAt(0)}
+                                </div>
+                                <div>
+                                   <p className="font-bold text-sm">{ngo.name}</p>
+                                   <p className="text-[10px] text-muted-foreground">{ngo.location}</p>
+                                </div>
+                             </div>
+                             <UrgencyBadge urgency="Medium" />
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">{ngo.focusArea} relief efforts and community support.</p>
+                          <div className="flex gap-2">
+                             {pendingJoinRequests.includes(ngo.id) ? (
+                                <Button size="sm" disabled className="flex-1 rounded-xl font-bold bg-muted text-muted-foreground">Request Pending</Button>
+                             ) : myNgos.some(mn => mn.id === ngo.id) ? (
+                                <Button size="sm" disabled className="flex-1 rounded-xl font-bold bg-success/10 text-success border-success/20">Already Joined</Button>
+                             ) : (
+                                <Button size="sm" className="flex-1 rounded-xl font-bold shadow-lg shadow-primary/10" onClick={() => handleRequestToJoin(ngo.id)}>Request to Join</Button>
+                             )}
+                             <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl"><Eye className="h-4 w-4" /></Button>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </TabsContent>
+            </Tabs>
           </div>
         );
       default:

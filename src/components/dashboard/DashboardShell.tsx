@@ -77,8 +77,15 @@ export function DashboardShell<T extends string>({
 
   const handleSectionClick = (id: T) => {
     onSectionChange(id);
-    if (sidebarOpen) {
-      onSidebarToggle();
+    
+    if (id === 'overview') {
+      if (!sidebarOpen) {
+        onSidebarToggle();
+      }
+    } else {
+      if (sidebarOpen) {
+        onSidebarToggle();
+      }
     }
   };
 

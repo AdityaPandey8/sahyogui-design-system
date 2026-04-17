@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { type Issue, type NGO, type Volunteer, type PastCrisis, type Alert as AlertType } from "@/data/mockData";
 import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, updateIssueStatus, updateVolunteerStatus } from "@/lib/supabase-service";
+import { supabase } from "@/integrations/supabase/client";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -26,23 +27,25 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock, Plus, Megaphone,
   ShieldAlert, Brain, Send, Flag, Activity, LayoutDashboard, FileText,
-  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles, Loader2
+  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles, Loader2, Globe
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { pastCrises as mockPastCrises } from "@/data/mockData";
 
-type AdminSection = "overview" | "issues" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
+type AdminSection = "overview" | "issues" | "verification" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
 
 const sidebarItems: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "issues", label: "Issues", icon: FileText },
+  { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "ngos", label: "NGOs", icon: Building2 },
   { id: "volunteers", label: "Volunteers", icon: Users },
@@ -52,7 +55,7 @@ const sidebarItems: { id: AdminSection; label: string; icon: typeof LayoutDashbo
 ];
 
 const adminNotifications: Notification[] = [
-  { id: "n1", title: "Issue Pending Verification", message: "3 new issues need verification.", type: "warning", time: "2m ago", read: false },
+  { id: "n1", title: "NGO Pending Verification", message: "2 new NGOs have submitted their registration details.", type: "warning", time: "2m ago", read: false },
   { id: "n2", title: "Crisis Mode Available", message: "Bihar flood situation escalating.", type: "danger", time: "15m ago", read: false },
   { id: "n3", title: "NGO Performance Update", message: "CareLine Initiative resolved 5 issues today.", type: "success", time: "1h ago", read: true },
 ];
@@ -80,6 +83,92 @@ export default function DashboardAdmin() {
   const [assignIssue, setAssignIssue] = useState<Issue | null>(null);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [crisisMode, setCrisisMode] = useState(false);
+  const [pendingNgos, setPendingNgos] = useState<any[]>([]);
+  const [pendingVols, setPendingVols] = useState<any[]>([]);
+  const [globalVols, setGlobalVols] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchNgos = async () => {
+      const { data } = await supabase
+        .from("ngo_details")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data) {
+        setPendingNgos(data.filter(n => n.verification_status === "pending"));
+        // You could also add a state for allNgos if needed, but for now we'll use pending for the verification tab
+      }
+    };
+
+    const fetchVolunteerPool = async () => {
+      const { data: allVols } = await supabase
+        .from("volunteer_details")
+        .select("*")
+        .order("trust_score", { ascending: false });
+      
+      if (allVols) {
+        setGlobalVols(allVols);
+        setPendingVols(allVols.filter(v => v.verification_status === "pending"));
+      }
+    };
+
+    if (section === "verification") {
+      fetchNgos();
+      fetchVolunteerPool();
+    } else if (section === "volunteers") {
+      fetchVolunteerPool();
+    }
+  }, [section]);
+
+  const handleVerifyVol = async (id: string) => {
+    const { error } = await supabase
+      .from("volunteer_details")
+      .update({ 
+        verification_status: "verified", 
+        type: "verified" 
+      })
+      .eq("id", id);
+    
+    if (!error) {
+      setPendingVols(prev => prev.filter(v => v.id !== id));
+      setGlobalVols(prev => prev.map(v => v.id === id ? { ...v, verification_status: "verified", type: "verified" } : v));
+      toast.success("Volunteer verified successfully");
+    }
+  };
+
+  const handleVerifyNgo = async (id: string) => {
+    const { error } = await supabase
+      .from("ngo_details")
+      .update({ verification_status: "verified", verified_at: new Date().toISOString() })
+      .eq("id", id);
+    
+    if (!error) {
+      setPendingNgos(prev => prev.filter(n => n.id !== id));
+      toast.success("NGO verified successfully");
+    } else {
+      toast.error("Failed to verify NGO");
+    }
+  };
+
+  const handleRejectNgo = async (id: string) => {
+    const { error } = await supabase
+      .from("ngo_details")
+      .update({ verification_status: "rejected" })
+      .eq("id", id);
+    
+    if (!error) {
+      setPendingNgos(prev => prev.filter(n => n.id !== id));
+      toast.error("NGO registration rejected");
+    } else {
+      toast.error("Failed to reject NGO");
+    }
+  };
+
+  const openDarpanSearch = (darpanId: string) => {
+    const url = darpanId 
+      ? `https://ngodarpan.gov.in/index.php/search/index_new/1?search_text=${darpanId}&search_type=darpan_id`
+      : "https://ngodarpan.gov.in/index.php/search/";
+    window.open(url, "_blank");
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -278,6 +367,101 @@ export default function DashboardAdmin() {
           </motion.div>
         );
 
+      case "verification":
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+              <ShieldCheck className="h-5 w-5 text-primary" /> Verification Command Center
+            </h2>
+
+            <Tabs defaultValue="ngos" className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl bg-muted/50 p-1">
+                <TabsTrigger value="ngos" className="rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">NGOs ({pendingNgos.length})</TabsTrigger>
+                <TabsTrigger value="volunteers" className="rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">Volunteers ({pendingVols.length})</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="ngos" className="mt-6">
+                <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">NGO Details</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Reg & Tax Info</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                        <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingNgos.length === 0 ? (
+                        <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No pending NGO requests</TableCell></TableRow>
+                      ) : (
+                        pendingNgos.map((ngo) => (
+                          <TableRow key={ngo.id}>
+                            <TableCell><p className="font-bold text-sm">{ngo.ngo_name}</p><p className="text-[10px] text-muted-foreground">{new Date(ngo.created_at).toLocaleDateString()}</p></TableCell>
+                            <TableCell><p className="text-xs font-mono">REG: {ngo.registration_number}</p><p className="text-xs font-mono">PAN: {ngo.pan_tax_id}</p></TableCell>
+                            <TableCell>
+                               <span className={cn(
+                                 "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                 ngo.verification_status === 'pending' ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+                               )}>{ngo.verification_status}</span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" className="h-8 rounded-lg text-primary" onClick={() => openDarpanSearch(ngo.darpan_id)}>Verify on Darpan</Button>
+                                <Button size="sm" className="h-8 rounded-lg font-bold" onClick={() => handleVerifyNgo(ngo.id)}>Approve</Button>
+                                <Button size="sm" variant="destructive" className="h-8 rounded-lg font-bold" onClick={() => handleRejectNgo(ngo.id)}>Reject</Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="volunteers" className="mt-6">
+                <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Volunteer</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Skills</TableHead>
+                        <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                        <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingVols.length === 0 ? (
+                        <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No pending volunteer requests</TableCell></TableRow>
+                      ) : (
+                        pendingVols.map((vol) => (
+                          <TableRow key={vol.id}>
+                            <TableCell><p className="font-bold text-sm">{vol.full_name}</p><p className="text-[10px] text-muted-foreground">Basic Member</p></TableCell>
+                            <TableCell><div className="flex flex-wrap gap-1">{vol.skills?.map((s: string) => (<span key={s} className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">{s}</span>))}</div></TableCell>
+                            <TableCell>
+                               <span className={cn(
+                                 "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                 vol.verification_status === 'pending' ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+                               )}>{vol.verification_status}</span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="outline" className="h-8 rounded-lg"><FileText className="h-3.5 w-3.5 mr-1.5" /> View ID</Button>
+                                <Button size="sm" className="h-8 rounded-lg font-bold" onClick={() => handleVerifyVol(vol.id)}>Approve Verification</Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        );
+
       case "issues":
         return (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -363,62 +547,56 @@ export default function DashboardAdmin() {
       case "ngos":
         return (
           <div className="space-y-6">
-            <h2 className="text-base font-bold flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> NGO Management</h2>
-            <div className="rounded-xl border overflow-auto">
+            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+              <Building2 className="h-5 w-5 text-primary" /> NGO Management Center
+            </h2>
+            <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Focus Area</TableHead>
-                    <TableHead>Handled</TableHead>
-                    <TableHead>Success</TableHead>
-                    <TableHead>Avg Time</TableHead>
-                    <TableHead>Volunteers</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">NGO Name</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Reg Info</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Type</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                    <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ngoList.map(ngo => (
-                    <TableRow key={ngo.id} className="transition-colors hover:bg-muted/50">
-                      <TableCell className="font-medium text-sm">{ngo.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{ngo.focusArea}</TableCell>
-                      <TableCell className="tabular-nums">{ngo.issuesHandled}</TableCell>
-                      <TableCell className={cn("tabular-nums font-medium", ngo.successRate >= 90 ? "text-success" : "text-warning")}>{ngo.successRate}%</TableCell>
-                      <TableCell className="text-xs">{ngo.avgResponseTime}</TableCell>
-                      <TableCell className="tabular-nums">{ngo.volunteerIds.length}</TableCell>
+                  {pendingNgos.map(ngo => (
+                    <TableRow key={ngo.id} className="transition-colors hover:bg-primary/5 border-border/50">
+                      <TableCell className="font-bold text-sm">{ngo.ngo_name}</TableCell>
+                      <TableCell className="text-xs font-mono">REG: {ngo.registration_number}</TableCell>
+                      <TableCell className="text-xs font-medium uppercase tracking-tight">{ngo.ngo_type || "Trust"}</TableCell>
                       <TableCell>
-                        <span className={cn("text-xs font-medium", ngo.blocked ? "text-danger" : "text-success")}>{ngo.blocked ? "Blocked" : "Active"}</span>
+                         <span className={cn(
+                           "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                           ngo.verification_status === 'verified' ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                         )}>{ngo.verification_status}</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedNgo(ngo)}><Eye className="h-3 w-3 mr-1" />Details</Button>
-                          <Button size="sm" variant={ngo.blocked ? "default" : "destructive"} className="h-7 text-xs" onClick={() => handleBlockNgo(ngo.id)}>
-                            {ngo.blocked ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => toast.success(`Task assigned to ${ngo.name}`)}><Handshake className="h-3 w-3" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"><Eye className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" onClick={() => handleBlockNgo(ngo.id)}><ShieldOff className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Mock data for visualization if DB empty */}
+                  {pendingNgos.length === 0 && ngoList.map(ngo => (
+                    <TableRow key={ngo.id} className="transition-colors hover:bg-primary/5 border-border/50">
+                      <TableCell className="font-bold text-sm">{ngo.name}</TableCell>
+                      <TableCell className="text-xs font-mono">ID: {ngo.id}</TableCell>
+                      <TableCell className="text-xs font-medium uppercase tracking-tight">NGO</TableCell>
+                      <TableCell><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-success/10 text-success">Verified</span></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => setSelectedNgo(ngo)}><Eye className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
-
-            {/* Joint Operations */}
-            <div>
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Handshake className="h-3.5 w-3.5 text-primary" /> Coordinate Joint Operations</h3>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {ngoList.filter(n => !n.blocked).map(ngo => (
-                  <div key={ngo.id} className="rounded-xl border bg-card p-4 transition-all hover:shadow-md">
-                    <p className="text-sm font-semibold">{ngo.name}</p>
-                    <p className="text-xs text-muted-foreground mb-2">{ngo.focusArea} · {ngo.volunteerIds.length} volunteers</p>
-                    <Button size="sm" variant="outline" className="h-7 text-xs w-full" onClick={() => toast.success(`Joint operation initiated with ${ngo.name}`)}>
-                      <Handshake className="h-3 w-3 mr-1" /> Coordinate
-                    </Button>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         );
@@ -426,48 +604,79 @@ export default function DashboardAdmin() {
       case "volunteers":
         return (
           <div className="space-y-6">
-            <h2 className="text-base font-bold flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Volunteer Management</h2>
-            <div className="rounded-xl border overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Skills</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Tasks</TableHead>
-                    <TableHead>Response</TableHead>
-                    <TableHead>Reliability</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {volList.map(vol => (
-                    <TableRow key={vol.id} className="transition-colors hover:bg-muted/50">
-                      <TableCell className="font-medium text-sm">{vol.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">{vol.skills.join(", ")}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{vol.location}</TableCell>
-                      <TableCell className="tabular-nums">{vol.tasksCompleted}</TableCell>
-                      <TableCell className="tabular-nums">{vol.responseRate}%</TableCell>
-                      <TableCell className="tabular-nums">{vol.reliabilityScore}</TableCell>
-                      <TableCell>
-                        <span className={cn("text-xs font-medium", vol.blocked ? "text-danger" : vol.available ? "text-success" : "text-muted-foreground")}>
-                          {vol.blocked ? "Blocked" : vol.available ? "Active" : "Offline"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedVol(vol)}><Eye className="h-3 w-3 mr-1" />Details</Button>
-                          <Button size="sm" variant={vol.blocked ? "default" : "destructive"} className="h-7 text-xs" onClick={() => handleBlockVol(vol.id)}>
-                            {vol.blocked ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => toast.success(`Task assigned to ${vol.name}`)}><UserCheck className="h-3 w-3" /></Button>
-                        </div>
-                      </TableCell>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+                <Users className="h-5 w-5 text-primary" /> Global Volunteer Pool
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/10 text-success text-[10px] font-bold border border-success/20">
+                  <Activity className="h-3 w-3" /> {globalVols.filter(v => v.availability).length} ACTIVE
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6">
+              <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Volunteer</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Type</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Skills</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground text-center">Trust Score</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                      <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {globalVols.map((vol) => (
+                      <TableRow key={vol.id} className="transition-colors hover:bg-primary/5 border-border/50">
+                        <TableCell>
+                          <p className="font-bold text-sm tracking-tight">{vol.full_name}</p>
+                          <p className="text-[10px] text-muted-foreground">{vol.location_text || "Remote / Global"}</p>
+                        </TableCell>
+                        <TableCell>
+                          <div className={cn(
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                            vol.type === "ngo_verified" ? "bg-success/10 text-success border-success/20" :
+                            vol.type === "verified" ? "bg-primary/10 text-primary border-primary/20" :
+                            "bg-muted/50 text-muted-foreground border-border/50"
+                          )}>
+                            {vol.type === "ngo_verified" && <ShieldCheck className="h-3 w-3" />}
+                            {vol.type === "verified" && <CheckCircle className="h-3 w-3" />}
+                            {vol.type?.replace("_", " ").toUpperCase()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {vol.skills?.slice(0, 3).map((s: string) => (
+                              <span key={s} className="px-1.5 py-0.5 rounded-md bg-muted/50 text-muted-foreground text-[10px] font-medium border border-border/50">{s}</span>
+                            ))}
+                            {vol.skills?.length > 3 && <span className="text-[10px] text-muted-foreground font-medium">+{vol.skills.length - 3}</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-primary/5 text-primary font-bold text-xs border border-primary/10">
+                            {vol.trust_score}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <div className={cn("h-1.5 w-1.5 rounded-full", vol.availability ? "bg-success" : "bg-muted-foreground")} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{vol.availability ? "Available" : "Busy"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"><Eye className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" onClick={() => handleBlockVol(vol.id)}><ShieldOff className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         );
