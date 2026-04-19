@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
-  Shield, Building2, Heart, Globe, Loader2, ArrowLeft, 
+  LucideIcon, Shield, Building2, Heart, Globe, Loader2, ArrowLeft, 
   CheckCircle2, User, Mail, Lock, LogIn, UserPlus, Sparkles, ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AppRole } from "@/hooks/useAuth";
 
-const roles: { key: AppRole; label: string; icon: any; desc: string; color: string }[] = [
+const roles: { key: AppRole; label: string; icon: LucideIcon; desc: string; color: string }[] = [
   { key: "admin", label: "Admin", icon: Shield, desc: "Oversee the platform", color: "text-primary bg-primary/10 border-primary/20" },
   { key: "ngo", label: "NGO", icon: Building2, desc: "Coordinate relief", color: "text-success bg-success/10 border-success/20" },
   { key: "volunteer", label: "Volunteer", icon: Heart, desc: "Help on the ground", color: "text-warning bg-warning/10 border-warning/20" },

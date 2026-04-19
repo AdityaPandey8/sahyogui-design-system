@@ -1,4 +1,4 @@
-# SahyogUI Design System
+# SahyogAI Design System
 
 A disaster relief and volunteer coordination platform built with React, TypeScript, and Supabase.
 

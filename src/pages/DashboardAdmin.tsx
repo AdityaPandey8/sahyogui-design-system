@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { type Issue, type NGO, type Volunteer, type PastCrisis, type Alert as AlertType } from "@/data/mockData";
-import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, updateIssueStatus, updateVolunteerStatus } from "@/lib/supabase-service";
+import { getIssues, getNGOs, getVolunteers, getAlerts, createIssue, updateIssueStatus, updateVolunteerStatus, getPublicUsers, updateUserStatus } from "@/lib/supabase-service";
 import { supabase } from "@/integrations/supabase/client";
 import { AIChatWidget } from "@/components/dashboard/AIChatWidget";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
@@ -34,21 +34,23 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3, Users, AlertTriangle, CheckCircle, Clock, Plus, Megaphone,
   ShieldAlert, Brain, Send, Flag, Activity, LayoutDashboard, FileText,
-  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles, Loader2, Globe
+  Building2, UserCheck, Bell, History, Settings, ShieldCheck, ShieldOff, Trash2, Eye, Handshake, Sparkles, Loader2, Globe, User
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { pastCrises as mockPastCrises } from "@/data/mockData";
+import { NGODetails, VolunteerDetails, UserProfile } from "@/types/database";
 
-type AdminSection = "overview" | "issues" | "verification" | "analytics" | "ngos" | "volunteers" | "alerts" | "history" | "settings";
+type AdminSection = "overview" | "issues" | "verification" | "analytics" | "ngos" | "volunteers" | "publics" | "alerts" | "history" | "settings";
 
-const sidebarItems: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
+const sidebarItems: { id: AdminSection; label: string; icon: any }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "issues", label: "Issues", icon: FileText },
   { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "ngos", label: "NGOs", icon: Building2 },
   { id: "volunteers", label: "Volunteers", icon: Users },
+  { id: "publics", label: "Public Accounts", icon: User },
   { id: "alerts", label: "Alerts", icon: Bell },
   { id: "history", label: "History", icon: History },
   { id: "settings", label: "Settings", icon: Settings },
@@ -68,6 +70,7 @@ export default function DashboardAdmin() {
   const [ngoList, setNgoList] = useState<NGO[]>([]);
   const [volList, setVolList] = useState<Volunteer[]>([]);
   const [alertList, setAlertList] = useState<AlertType[]>([]);
+  const [publicUsers, setPublicUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
@@ -83,9 +86,9 @@ export default function DashboardAdmin() {
   const [assignIssue, setAssignIssue] = useState<Issue | null>(null);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [crisisMode, setCrisisMode] = useState(false);
-  const [pendingNgos, setPendingNgos] = useState<any[]>([]);
-  const [pendingVols, setPendingVols] = useState<any[]>([]);
-  const [globalVols, setGlobalVols] = useState<any[]>([]);
+  const [pendingNgos, setPendingNgos] = useState<NGODetails[]>([]);
+  const [pendingVols, setPendingVols] = useState<VolunteerDetails[]>([]);
+  const [globalVols, setGlobalVols] = useState<VolunteerDetails[]>([]);
 
   useEffect(() => {
     const fetchNgos = async () => {
@@ -95,7 +98,6 @@ export default function DashboardAdmin() {
         .order("created_at", { ascending: false });
       if (data) {
         setPendingNgos(data.filter(n => n.verification_status === "pending"));
-        // You could also add a state for allNgos if needed, but for now we'll use pending for the verification tab
       }
     };
 
@@ -111,11 +113,18 @@ export default function DashboardAdmin() {
       }
     };
 
+    const fetchPublics = async () => {
+      const users = await getPublicUsers();
+      setPublicUsers(users);
+    };
+
     if (section === "verification") {
       fetchNgos();
       fetchVolunteerPool();
     } else if (section === "volunteers") {
       fetchVolunteerPool();
+    } else if (section === "publics") {
+      fetchPublics();
     }
   }, [section]);
 
@@ -160,6 +169,16 @@ export default function DashboardAdmin() {
       toast.error("NGO registration rejected");
     } else {
       toast.error("Failed to reject NGO");
+    }
+  };
+
+  const handleToggleUserBlock = async (userId: string, currentBlocked: boolean) => {
+    const success = await updateUserStatus(userId, !currentBlocked);
+    if (success) {
+      setPublicUsers(prev => prev.map(u => u.id === userId ? { ...u, blocked: !currentBlocked } : u));
+      toast.success(`User ${!currentBlocked ? "blocked" : "unblocked"} successfully`);
+    } else {
+      toast.error("Failed to update user status");
     }
   };
 
@@ -326,14 +345,6 @@ export default function DashboardAdmin() {
               </div>
             </div>
 
-            <div className="rounded-2xl border bg-card/40 backdrop-blur-md p-2 shadow-xl shadow-primary/5">
-              <MapDashboard
-                userRole="admin"
-                issues={issueList}
-                onIssueClick={setSelectedIssue}
-              />
-            </div>
-
             {/* Verification quick view */}
             {pendingIssues.length > 0 && (
               <div className="pt-4">
@@ -439,6 +450,7 @@ export default function DashboardAdmin() {
                           <TableRow key={vol.id}>
                             <TableCell><p className="font-bold text-sm">{vol.full_name}</p><p className="text-[10px] text-muted-foreground">Basic Member</p></TableCell>
                             <TableCell><div className="flex flex-wrap gap-1">{vol.skills?.map((s: string) => (<span key={s} className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">{s}</span>))}</div></TableCell>
+
                             <TableCell>
                                <span className={cn(
                                  "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
@@ -678,6 +690,61 @@ export default function DashboardAdmin() {
                 </Table>
               </div>
             </div>
+          </div>
+        );
+
+      case "publics":
+        return (
+          <div className="space-y-6">
+             <h2 className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+                <User className="h-5 w-5 text-primary" /> Public User Accounts
+             </h2>
+             <div className="rounded-2xl border bg-card/40 backdrop-blur-md overflow-hidden shadow-xl shadow-primary/5">
+                <Table>
+                   <TableHeader className="bg-muted/50">
+                      <TableRow>
+                         <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">User ID / Email</TableHead>
+                         <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Joined</TableHead>
+                         <TableHead className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                         <TableHead className="text-right font-bold text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
+                      </TableRow>
+                   </TableHeader>
+                   <TableBody>
+                      {publicUsers.length === 0 ? (
+                        <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">No public accounts found</TableCell></TableRow>
+                      ) : (
+                        publicUsers.map((u) => (
+                          <TableRow key={u.id}>
+                             <TableCell>
+                                <p className="font-bold text-sm">{u.email || "No Email"}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono">{u.id}</p>
+                             </TableCell>
+                             <TableCell><p className="text-xs">{new Date(u.created_at).toLocaleDateString()}</p></TableCell>
+                             <TableCell>
+                                <span className={cn(
+                                   "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                   u.blocked ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"
+                                )}>
+                                   {u.blocked ? "Blocked" : "Active"}
+                                </span>
+                             </TableCell>
+                             <TableCell className="text-right">
+                                <Button 
+                                   variant="ghost" 
+                                   size="sm" 
+                                   className={cn("h-8 rounded-lg font-bold", u.blocked ? "text-success hover:bg-success/10" : "text-destructive hover:bg-destructive/10")}
+                                   onClick={() => handleToggleUserBlock(u.id, u.blocked)}
+                                >
+                                   {u.blocked ? <CheckCircle className="h-4 w-4 mr-1.5" /> : <ShieldOff className="h-4 w-4 mr-1.5" />}
+                                   {u.blocked ? "Unblock" : "Block User"}
+                                </Button>
+                             </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                   </TableBody>
+                </Table>
+             </div>
           </div>
         );
 

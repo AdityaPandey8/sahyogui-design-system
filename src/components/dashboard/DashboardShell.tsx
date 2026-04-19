@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { SearchBar } from "@/components/dashboard/SearchBar";
-import { RoleSwitcher } from "@/components/dashboard/RoleSwitcher";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -114,7 +113,7 @@ export function DashboardShell<T extends string>({
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20 shrink-0">
                   <ShieldAlert className="h-5 w-5" />
                 </div>
-                <span className="text-lg font-black tracking-tighter text-foreground uppercase">SAHYOG<span className="text-primary italic">UI</span></span>
+                <span className="text-lg font-black tracking-tighter text-foreground uppercase">Sahyog<span className="text-primary italic">AI</span></span>
               </motion.div>
             ) : (
               <motion.div
@@ -179,7 +178,7 @@ export function DashboardShell<T extends string>({
             {sidebarOpen && (
               <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xs font-bold truncate text-foreground leading-tight">Admin User</p>
-                <p className="text-[10px] text-muted-foreground truncate leading-tight">admin@sahyogui.org</p>
+                <p className="text-[10px] text-muted-foreground truncate leading-tight">admin@sahyogai.org</p>
               </div>
             )}
             {sidebarOpen && (
@@ -188,7 +187,6 @@ export function DashboardShell<T extends string>({
               </Button>
             )}
           </div>
-          <RoleSwitcher currentRole={panelLabel} isCollapsed={!sidebarOpen} />
         </div>
       </aside>
 

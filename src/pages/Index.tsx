@@ -59,7 +59,7 @@ export default function Index() {
       <ImageCarouselHero
         title="Connecting Communities with NGOs & Volunteers using AI"
         subtitle="AI-Powered Crisis Coordination for a Safer Tomorrow"
-        description="SahyogUI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
+        description="SahyogAI bridges the gap between those who need help and those who can provide it — powered by intelligent matching and real-time coordination."
         ctaText="Get Started"
         onCtaClick={() => navigate("/auth")}
         secondaryCtaText="Learn More"

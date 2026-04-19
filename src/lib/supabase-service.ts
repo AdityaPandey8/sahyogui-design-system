@@ -4,6 +4,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Use an untyped client for tables not in the generated types
 const supabaseUntyped = createClient(SUPABASE_URL, SUPABASE_KEY);
 import { issues as mockIssues, alerts as mockAlerts, ngos as mockNgos, volunteers as mockVolunteers, type Issue, type Alert, type NGO, type Volunteer } from "@/data/mockData";
+import { UserProfile } from "@/types/database";
 
 export const getIssues = async (): Promise<Issue[]> => {
   try {
@@ -48,8 +49,8 @@ export const getAlerts = async (): Promise<Alert[]> => {
 export const getNGOs = async (): Promise<NGO[]> => {
   try {
     const { data, error } = await supabaseUntyped
-      .from('ngos')
-      .select('*');
+      .from('ngo_details')
+      .select('*, profiles(email, blocked)');
 
     if (error) {
       console.error("Error fetching NGOs from Supabase:", error);
@@ -57,7 +58,21 @@ export const getNGOs = async (): Promise<NGO[]> => {
     }
 
     if (!data || data.length === 0) return mockNgos;
-    return data as unknown as NGO[];
+    
+    return data.map((item) => ({
+      id: item.id,
+      name: item.ngo_name,
+      focusArea: "Disaster Relief", // Default or extract from areas if available
+      activeIssues: 0,
+      description: item.rejection_reason || "",
+      issuesHandled: 0,
+      successRate: 100,
+      avgResponseTime: "2h",
+      blocked: (item.profiles as any)?.blocked || false,
+      volunteerIds: [],
+      contactEmail: (item.profiles as any)?.email || "",
+      location: "India"
+    }));
   } catch (err) {
     console.error("Supabase service error:", err);
     return mockNgos;
@@ -67,8 +82,8 @@ export const getNGOs = async (): Promise<NGO[]> => {
 export const getVolunteers = async (): Promise<Volunteer[]> => {
   try {
     const { data, error } = await supabaseUntyped
-      .from('volunteers')
-      .select('*');
+      .from('volunteer_details')
+      .select('*, profiles(blocked)');
 
     if (error) {
       console.error("Error fetching volunteers from Supabase:", error);
@@ -76,10 +91,61 @@ export const getVolunteers = async (): Promise<Volunteer[]> => {
     }
 
     if (!data || data.length === 0) return mockVolunteers;
-    return data as unknown as Volunteer[];
+    
+    return data.map((item) => ({
+      id: item.id,
+      name: item.full_name,
+      skills: item.skills || [],
+      available: item.availability,
+      responseRate: 95,
+      reliabilityScore: Number(item.reliability_score) || 4.5,
+      tasksCompleted: item.tasks_completed || 0,
+      coords: { x: Number(item.latitude) || 0, y: Number(item.longitude) || 0 },
+      blocked: (item.profiles as any)?.blocked || (item as any).blocked || false,
+      location: item.location_text || "India",
+      assignedTasks: [],
+      phone: ""
+    }));
   } catch (err) {
     console.error("Supabase service error:", err);
     return mockVolunteers;
+  }
+};
+
+export const getPublicUsers = async (): Promise<UserProfile[]> => {
+  try {
+    const { data, error } = await supabaseUntyped
+      .from('profiles')
+      .select('*')
+      .eq('role', 'public');
+
+    if (error) {
+      console.error("Error fetching public users:", error);
+      return [];
+    }
+
+    return data as UserProfile[];
+  } catch (err) {
+    console.error("Supabase service error:", err);
+    return [];
+  }
+};
+
+export const updateUserStatus = async (userId: string, blocked: boolean): Promise<boolean> => {
+  try {
+    const { error } = await supabaseUntyped
+      .from('profiles')
+      .update({ blocked })
+      .eq('id', userId);
+
+    if (error) {
+      console.error("Error updating user status:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Supabase service error:", err);
+    return false;
   }
 };
 
@@ -166,8 +232,8 @@ export const updateIssueStatus = async (issueId: string, status: string): Promis
 export const toggleVolunteerAvailability = async (volId: string, available: boolean): Promise<boolean> => {
   try {
     const { error } = await supabaseUntyped
-      .from('volunteers')
-      .update({ available })
+      .from('volunteer_details')
+      .update({ availability: available })
       .eq('id', volId);
 
     if (error) {
@@ -183,7 +249,7 @@ export const toggleVolunteerAvailability = async (volId: string, available: bool
 export const updateVolunteerStatus = async (volId: string, blocked: boolean): Promise<boolean> => {
   try {
     const { error } = await supabaseUntyped
-      .from('volunteers')
+      .from('profiles')
       .update({ blocked })
       .eq('id', volId);
 

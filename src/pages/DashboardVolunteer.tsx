@@ -33,13 +33,14 @@ import {
   CheckCircle, Clock, MapPin, Zap, Trophy,
   BarChart3, AlertTriangle, Star, Upload, User, Brain, Plus, Sparkles,
   LayoutDashboard, ClipboardList, ListTodo, Map, MessageSquare, Bell, UserCircle, Trash2,
-  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren, Loader2, Globe, ShieldCheck, Heart, UserPlus
+  Send, X, Building2, Eye, ChevronDown, ChevronRight, Siren, Loader2, Globe, ShieldCheck, Heart, UserPlus, Award
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { calcPriorityScore } from "@/lib/ai-insights";
 import { useAuth } from "@/hooks/useAuth";
+import { VolunteerDetails, NGODetails } from "@/types/database";
 
 const volNotifications: Notification[] = [
   { id: "n1", title: "New Task Assigned", message: "Food shortage relief task near you.", type: "warning", time: "3m ago", read: false },
@@ -99,8 +100,8 @@ export default function DashboardVolunteer() {
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
   const { user } = useAuth();
   
-  const [volDetails, setVolDetails] = useState<any>(null);
-  const [myNgos, setMyNgos] = useState<any[]>([]);
+  const [volDetails, setVolDetails] = useState<VolunteerDetails | null>(null);
+  const [myNgos, setMyNgos] = useState<NGODetails[]>([]);
   const [pendingJoinRequests, setPendingJoinRequests] = useState<string[]>([]);
 
   useEffect(() => {

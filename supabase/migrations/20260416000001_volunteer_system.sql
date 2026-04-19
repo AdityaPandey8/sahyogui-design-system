@@ -13,6 +13,7 @@ CREATE TABLE public.volunteer_details (
     reliability_score numeric(3,2) DEFAULT 4.5,
     tasks_completed integer DEFAULT 0,
     availability boolean DEFAULT true,
+    blocked boolean DEFAULT false,
     location_text text,
     latitude numeric,
     longitude numeric,

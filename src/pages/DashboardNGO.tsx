@@ -58,6 +58,10 @@ const ngoNotifications: Notification[] = [
   { id: "n3", title: "Issue Resolved", message: "Road debris clearing completed.", type: "success", time: "45m ago", read: true },
 ];
 
+import { VolunteerDetails, VolunteerJoinRequest } from "@/types/database";
+
+// ... (existing imports)
+
 export default function DashboardNGO() {
   const { t } = useTranslation();
   const [section, setSection] = useState<NgoSection>("overview");
@@ -82,9 +86,9 @@ export default function DashboardNGO() {
   const [crisisMode, setCrisisMode] = useState(false);
   const { user } = useAuth();
   
-  const [myVols, setMyVols] = useState<any[]>([]);
-  const [globalPool, setGlobalPool] = useState<any[]>([]);
-  const [joinRequests, setJoinRequests] = useState<any[]>([]);
+  const [myVols, setMyVols] = useState<VolunteerDetails[]>([]);
+  const [globalPool, setGlobalPool] = useState<VolunteerDetails[]>([]);
+  const [joinRequests, setJoinRequests] = useState<VolunteerJoinRequest[]>([]);
 
   useEffect(() => {
     const fetchVols = async () => {
